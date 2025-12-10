@@ -29,7 +29,7 @@ class PostMyStyleScreen extends StatelessWidget {
   const PostMyStyleScreen({super.key});
 
   // Ganti dengan nama file gambar Anda yang sebenarnya
-  final String assetImagePath = 'assets/to2.jpg';
+  final String assetImagePath = 'assets/to29.jpg';
 
   @override
   Widget build(BuildContext context) {
