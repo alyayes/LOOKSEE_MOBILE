@@ -17,7 +17,7 @@ class _ProductPageState extends State<ProductPage> {
     {'name': 'Sunny Top', 'color': Color(0xFFFFF4BA), 'image': 'assets/prod5.jpg'},
     {'name': 'White Pants', 'color': Color(0xFFF5F5F5), 'image': 'assets/prod6.jpg'},
     {'name': 'Luxe Cardi', 'color': Color(0xFFD4B5D4), 'image': 'assets/prod7.jpg'},
-    {'name': 'Miva Blouse', 'color': Color(0xFFBAD9E1), 'image': 'assets/prod8.jpg'},
+    {'name': 'Peony Blouse', 'color': Color(0xFFBAD9E1), 'image': 'assets/peony.png'},
     {'name': 'Cardigan', 'color': Color(0xFFBAE1BA), 'image': 'assets/prod9.jpg'},
     {'name': 'Cherry Cardi', 'color': Color(0xFFFFF4BA), 'image': 'assets/prod10.jpg'},
     {'name': 'Luna Top', 'color': Color(0xFFE8D4E8), 'image': 'assets/prod11.jpg'},
