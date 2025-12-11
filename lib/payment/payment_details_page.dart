@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Wajib import ini untuk fitur Copy
 import 'dart:async'; // Untuk Timer
-import 'my_orders_page.dart';
+import '../orders/my_orders_page.dart';
 
 class PaymentDetailsPage extends StatefulWidget {
   const PaymentDetailsPage({super.key});

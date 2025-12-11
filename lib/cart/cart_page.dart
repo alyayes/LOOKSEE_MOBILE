@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'checkout_page.dart'; 
+import '../checkout/checkout_page.dart';
 
-// Model Data untuk Keranjang
 class CartItem {
   String id;
   String title;
@@ -30,7 +29,6 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-  // Data Dummy Produk
   final List<CartItem> _cartItems = [
     CartItem(
       id: '1',
@@ -62,7 +60,6 @@ class _CartPageState extends State<CartPage> {
     ),
   ];
 
-  // Hitung Total
   double get _totalPrice {
     double total = 0;
     for (var item in _cartItems) {
@@ -73,13 +70,11 @@ class _CartPageState extends State<CartPage> {
     return total;
   }
 
-  // Cek Select All
   bool get _isAllSelected {
     if (_cartItems.isEmpty) return false;
     return _cartItems.every((item) => item.isSelected);
   }
 
-  // Format Rupiah
   String _formatCurrency(double amount) {
     return "Rp${amount.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
   }
@@ -87,8 +82,7 @@ class _CartPageState extends State<CartPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. Ubah background jadi abu muda biar Card Putih terlihat jelas
-      backgroundColor: const Color(0xFFF9F9F9), 
+      backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
         title: const Text(
           "Cart",
@@ -101,7 +95,6 @@ class _CartPageState extends State<CartPage> {
       ),
       body: Column(
         children: [
-          // === HEADER SELECT ALL (Tetap Putih) ===
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -123,14 +116,12 @@ class _CartPageState extends State<CartPage> {
             ),
           ),
           
-          // === LIST ITEM DENGAN CARD STYLE ===
           Expanded(
             child: _cartItems.isEmpty 
               ? const Center(child: Text("Keranjang kosong"))
               : ListView.separated(
                   padding: const EdgeInsets.all(20),
                   itemCount: _cartItems.length,
-                  // Ganti Divider dengan Jarak (SizedBox) karena sudah pakai Card
                   separatorBuilder: (context, index) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     return _buildCartItemCard(_cartItems[index], index);
@@ -138,7 +129,6 @@ class _CartPageState extends State<CartPage> {
                 ),
           ),
 
-          // === BOTTOM BAR ===
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             decoration: BoxDecoration(
@@ -184,15 +174,13 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  // === WIDGET ITEM BERBENTUK KARTU (CARD) ===
   Widget _buildCartItemCard(CartItem item, int index) {
     return Container(
-      padding: const EdgeInsets.all(12), // Padding dalam kartu
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white, // Warna kartu putih
-        borderRadius: BorderRadius.circular(16), // Sudut membulat
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          // Efek bayangan halus biar "pop up"
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 15,
@@ -203,7 +191,6 @@ class _CartPageState extends State<CartPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Checkbox (di tengah vertikal gambar)
           Padding(
             padding: const EdgeInsets.only(top: 35),
             child: _customCheckbox(
@@ -217,19 +204,16 @@ class _CartPageState extends State<CartPage> {
           ),
           const SizedBox(width: 12),
           
-          // 2. Gambar Produk
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.network(item.image, width: 85, height: 85, fit: BoxFit.cover),
           ),
           const SizedBox(width: 15),
 
-          // 3. Detail Produk
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Judul & Sampah
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -249,7 +233,6 @@ class _CartPageState extends State<CartPage> {
                 Text("Size: ${item.size}", style: TextStyle(color: Colors.grey[500], fontSize: 13)),
                 const SizedBox(height: 10),
                 
-                // Harga & Quantity Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -258,7 +241,6 @@ class _CartPageState extends State<CartPage> {
                       style: const TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold, fontSize: 15)
                     ),
                     
-                    // Quantity Control
                     Row(
                       children: [
                         GestureDetector(
@@ -287,7 +269,6 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  // Tombol Quantity Kecil
   Widget _qtyBtn(IconData icon, {required bool isFilled}) {
     return Container(
       width: 26, height: 26,
@@ -304,7 +285,6 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  // Checkbox Custom
   Widget _customCheckbox({required bool value, required Function(bool) onChanged}) {
     return GestureDetector(
       onTap: () => onChanged(!value),

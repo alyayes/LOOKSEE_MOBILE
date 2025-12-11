@@ -1,38 +1,43 @@
 import 'package:flutter/material.dart';
 
-// Import Landing Page
-import 'landing_page.dart';
+import 'auth/login.dart';
+import 'home/home.dart';
+import 'product/product.dart'; 
+import 'landing/landing_page.dart';
 
-// Import halaman lain untuk testing (opsional)
-import 'register_page.dart';
-import 'login.dart';
-import 'detail_product_page.dart';
-import 'cart_page.dart';
-import 'checkout_page.dart';
-import 'my_orders_page.dart';
-import 'payment_details_page.dart';
+import 'auth/register_page.dart';
+import 'cart/cart_page.dart';
+import 'checkout/checkout_page.dart';
+import 'orders/my_orders_page.dart';
+import 'payment/payment_details_page.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Looksee App',
+      title: 'LOOKSEE',
       theme: ThemeData(
-        fontFamily: 'Poppins',
+        primarySwatch: Colors.pink,
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF69B4)),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF9F9F9),
       ),
-      
-      // JADIKAN LANDING PAGE SEBAGAI HALAMAN PERTAMA
-      home: const LandingPage(), 
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const LandingPage(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterPage(),
+        '/cart': (context) => const CartPage(),
+        '/checkout': (context) => const CheckoutPage(),
+        '/home': (context) => const HomeScreen(), 
+        '/product': (context) => const ProductPage(),
+      },
     );
   }
 }

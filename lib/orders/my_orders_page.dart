@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'payment_details_page.dart';
+import '../payment/payment_details_page.dart';
 
 // 1. MODEL DATA PESANAN (Supaya bisa difilter)
 class OrderItem {

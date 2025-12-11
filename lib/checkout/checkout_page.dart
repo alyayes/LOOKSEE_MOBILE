@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'payment_details_page.dart';
-import 'my_orders_page.dart';
+import '../payment/payment_details_page.dart';
+import '../orders/my_orders_page.dart';
 
 // MODEL DATA ALAMAT
 class Address {

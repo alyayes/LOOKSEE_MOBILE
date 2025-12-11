@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login.dart'; // Pastikan file login.dart ada dan class-nya LoginScreen
+import 'login.dart'; // Pastikan file ini ada dan isinya class LoginScreen
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -36,19 +36,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    
-                    // === BAGIAN INI DIGANTI JADI GIF ===
-                    // Menampilkan animasi GIF sukses
-                    SizedBox(
-                      height: 100, // Ukuran tinggi GIF
-                      width: 100,  // Ukuran lebar GIF
-                      child: Image.asset(
-                        'assets/sukses regis.gif', 
-                        fit: BoxFit.contain,
-                      ),
+                    // Ikon Ceklis Pink
+                    const Icon(
+                      Icons.check_circle, 
+                      color: Color(0xFFFF69B4), 
+                      size: 70
                     ),
-                    // ===================================
-
                     const SizedBox(height: 20),
                     
                     // Judul
@@ -74,7 +67,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context); // Tutup dialog
-                          // Pindah ke LoginScreen
+                          // Pindah ke LoginScreen (sesuai nama class di login.dart kamu)
                           Navigator.pushReplacement(
                             context, 
                             MaterialPageRoute(builder: (context) => const LoginScreen())
@@ -150,7 +143,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ]
                   ),
                   child: Center(
-                    // Memanggil gambar dari assets/logoo.png
+                    // Pastikan file assets/logoo.png ada
                     child: Image.asset(
                       'assets/logoo.png', 
                       fit: BoxFit.contain,
@@ -196,7 +189,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         );
                       } else {
-                        // Tampilkan Modal Sukses (dengan GIF)
+                        // Tampilkan Modal Sukses
                         _showSuccessDialog();
                       }
                     },

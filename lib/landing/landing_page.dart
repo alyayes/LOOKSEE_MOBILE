@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'login.dart'; // Pastikan ada class LoginScreen
-import 'register_page.dart'; // Pastikan ada class RegisterPage
+import '../auth/login.dart'; // Pastikan ada class LoginScreen
+import '../auth/register_page.dart'; // Pastikan ada class RegisterPage
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
