@@ -11,6 +11,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   // === DATA DUMMY (MOOD & GAMBAR) ===
   double _moodValue = 0.75;
+  bool _isFavorite = false; // State untuk track favorite
+  
   final List<String> _moodImages = [
     'assets/gif/sangatSedih.gif',
     'assets/gif/sedih.gif',
@@ -19,6 +21,15 @@ class _HomeScreenState extends State<HomeScreen> {
     'assets/gif/sangatSenang.gif'
   ];
   final List<String> _moodLabels = ['Very Sad', 'Sad', 'Neutral', 'Happy', 'Very Happy!'];
+  
+  // Produk images
+  final List<String> _productImages = [
+    'assets/shirt1.png',
+    'assets/prod1.jpg',
+    'assets/prod2.jpg',
+    'assets/prod3.jpg',
+    'assets/prod4.jpg',
+  ];
 
   int get _currentMoodIndex {
     int index = (_moodValue * (_moodImages.length - 1)).round();
@@ -83,8 +94,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.favorite_border, color: Colors.black54),
-                          onPressed: () {},
+                          icon: Icon(
+                            _isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: _isFavorite ? const Color(0xFFFF69B4) : Colors.black38,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isFavorite = !_isFavorite;
+                            });
+                            Navigator.pushNamed(context, '/favorite');
+                          },
                         ),
                         IconButton(
                           icon: const Icon(Icons.notifications_none, color: Colors.black54),
@@ -129,10 +148,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 160,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
-                    image: const DecorationImage(
-                      image: AssetImage('assets/banner.png'),
-                      fit: BoxFit.cover,
-                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.grey.withOpacity(0.2),
@@ -141,17 +156,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      color: Colors.grey.withOpacity(0.1),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.image,
-                        size: 60,
-                        color: Colors.white54,
-                      ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.asset(
+                      'assets/banner.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            color: Colors.grey.withOpacity(0.2),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.image,
+                              size: 60,
+                              color: Colors.white54,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -243,7 +267,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 10),
                           InkWell(
                             onTap: () {
-                              Navigator.pushNamed(context, '/product');
+                              // Kirim mood saat navigate
+                              Navigator.pushNamed(
+                                context, 
+                                '/product',
+                                arguments: _moodLabels[_currentMoodIndex], // Pass mood label
+                              );
                             },
                             child: Container(
                               padding: const EdgeInsets.all(8),
@@ -300,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> {
       height: 90,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 5,
+        itemCount: _productImages.length,
         itemBuilder: (context, index) {
           return Container(
             width: 90,
@@ -314,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: Image.asset(
-                'assets/shirt1.png',
+                _productImages[index],
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return const Icon(

@@ -50,7 +50,9 @@ class _ProductPageState extends State<ProductPage> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.favorite_border, color: Colors.black87),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/favorite');
+                    },
                   ),
                   IconButton(
                     icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
@@ -149,69 +151,82 @@ class _ProductPageState extends State<ProductPage> {
         ),
       ),
       // Menggunakan CustomNavBar yang sama seperti di HomeScreen
-      bottomNavigationBar: const CustomNavBar(currentIndex: 0),
+      bottomNavigationBar: const CustomNavBar(currentIndex: 1),
     );
   }
 
   Widget _buildProductItem(Map<String, dynamic> product) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!, width: 1),
-      ),
-      child: Column(
-        children: [
-          // Product Image
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: product['color'],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  product['image'],
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Icon(
-                        Icons.checkroom,
-                        size: 35,
-                        color: Colors.white.withOpacity(0.7),
-                      ),
-                    );
-                  },
+    return GestureDetector(
+      onTap: () {
+        // Navigate ke halaman detail product
+        Navigator.pushNamed(context, '/detail');
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Product Image
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: product['color'],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    product['image'],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.checkroom,
+                          size: 35,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
-          ),
-          // Product Name
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.pink[50],
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(12),
-                bottomRight: Radius.circular(12),
+            // Product Name
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.pink[50],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+              ),
+              child: Text(
+                product['name'],
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            child: Text(
-              product['name'],
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
