@@ -1,5 +1,23 @@
 import 'package:flutter/material.dart';
 import 'payment_details_page.dart';
+import 'my_orders_page.dart';
+
+// MODEL DATA ALAMAT
+class Address {
+  String id;
+  String name;
+  String phone;
+  String fullAddress;
+  bool isDefault;
+
+  Address({
+    required this.id,
+    required this.name,
+    required this.phone,
+    required this.fullAddress,
+    this.isDefault = false,
+  });
+}
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -9,19 +27,317 @@ class CheckoutPage extends StatefulWidget {
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
-  // 1. STATE UNTUK KATEGORI PEMBAYARAN
-  // 0: Bank Transfer, 1: E-Wallet, 2: COD
+  // STATE PAYMENT
   int _selectedCategory = 2; 
-
-  // 2. STATE UNTUK SUB-OPSI (Provider Spesifik)
-  String _selectedProvider = "COD"; // Default COD
-
-  // Data List Bank & E-Wallet
+  String _selectedProvider = "COD"; 
   final List<String> _banks = ["Mandiri", "BCA", "BRI", "BNI"];
   final List<String> _ewallets = ["GoPay", "ShopeePay", "OVO"];
 
+  // STATE ADDRESS (Data Dummy)
+  List<Address> _addresses = [
+    Address(
+      id: '1',
+      name: "Lucy Maudy",
+      phone: "087654321898",
+      fullAddress: "Jl. Raya Panjang Pisan, Kab. Kokoyashi, Provinsi Lea Loloya",
+      isDefault: true,
+    ),
+    Address(
+      id: '2',
+      name: "Lucy Kantor",
+      phone: "081234567890",
+      fullAddress: "Gedung Cyber 2, Jl. HR Rasuna Said, Jakarta Selatan",
+      isDefault: false,
+    ),
+  ];
+
+  int _selectedAddressIndex = 0;
+
+  // --- LOGIC MODAL SUKSES ORDER (UPDATED WITH GIF) ---
+  void _showOrderSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User tidak bisa tutup sembarangan
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                
+                // === BAGIAN INI DIGANTI JADI GIF ===
+                SizedBox(
+                  height: 120, // Ukuran disesuaikan agar pas
+                  width: 120,
+                  child: Image.asset(
+                    'assets/sukses regis.gif', 
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                // ===================================
+
+                const SizedBox(height: 10),
+                
+                // Judul
+                const Text(
+                  "Order Placed Successfully!",
+                  style: TextStyle(
+                    fontSize: 20, 
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                
+                // Deskripsi
+                const Text(
+                  "Your order #52 has been processed. Please complete the payment to proceed with shipping.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, fontSize: 14, height: 1.5),
+                ),
+                const SizedBox(height: 30),
+
+                // TOMBOL 1: PAY NOW (Ke Payment Details)
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Tutup dialog
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => const PaymentDetailsPage())
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF69B4),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    ),
+                    child: const Text("Pay Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+                
+                const SizedBox(height: 12),
+
+                // TOMBOL 2: CHECK MY ORDERS (Ke My Orders)
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Tutup dialog
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => const MyOrdersPage())
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFFF69B4)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    ),
+                    child: const Text(
+                      "Check My Orders", 
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFFF69B4))
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // --- LOGIC ALAMAT ---
+  void _showAddressModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Select Address", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                    ],
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: _addresses.isEmpty 
+                    ? const Center(child: Text("No address yet."))
+                    : ListView.builder(
+                        itemCount: _addresses.length,
+                        itemBuilder: (context, index) {
+                          final address = _addresses[index];
+                          bool isSelected = index == _selectedAddressIndex;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFFFFF0F5) : Colors.white,
+                              border: Border.all(color: isSelected ? const Color(0xFFFF69B4) : Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: InkWell(
+                              onTap: () {
+                                setState(() { _selectedAddressIndex = index; });
+                                Navigator.pop(context);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(address.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        const SizedBox(width: 8),
+                                        Text("| ${address.phone}", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                                        const Spacer(),
+                                        if (isSelected) const Icon(Icons.check_circle, color: Color(0xFFFF69B4), size: 20),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(address.fullAddress, style: TextStyle(color: Colors.grey[800], fontSize: 13)),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        TextButton.icon(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            _showAddressForm(existingAddress: address, index: index);
+                                          },
+                                          icon: const Icon(Icons.edit, size: 16, color: Colors.blue),
+                                          label: const Text("Edit", style: TextStyle(color: Colors.blue, fontSize: 12)),
+                                        ),
+                                        TextButton.icon(
+                                          onPressed: () {
+                                            if (_addresses.length > 1) {
+                                              setModalState(() {
+                                                _addresses.removeAt(index);
+                                                if (_selectedAddressIndex >= index) _selectedAddressIndex = 0;
+                                              });
+                                              setState(() {});
+                                            } else {
+                                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Cannot delete the last address")));
+                                            }
+                                          },
+                                          icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+                                          label: const Text("Delete", style: TextStyle(color: Colors.red, fontSize: 12)),
+                                        ),
+                                      ],
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showAddressForm();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFFF69B4)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: const Text("Add New Address", style: TextStyle(color: Color(0xFFFF69B4))),
+                    ),
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddressForm({Address? existingAddress, int? index}) {
+    final nameCtrl = TextEditingController(text: existingAddress?.name ?? "");
+    final phoneCtrl = TextEditingController(text: existingAddress?.phone ?? "");
+    final addressCtrl = TextEditingController(text: existingAddress?.fullAddress ?? "");
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(existingAddress == null ? "Add Address" : "Edit Address"),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Full Name")),
+                TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: "Phone Number"), keyboardType: TextInputType.phone),
+                TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: "Full Address"), maxLines: 3),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF69B4), foregroundColor: Colors.white),
+              onPressed: () {
+                if (nameCtrl.text.isNotEmpty && addressCtrl.text.isNotEmpty) {
+                  setState(() {
+                    if (existingAddress == null) {
+                      _addresses.add(Address(
+                        id: DateTime.now().toString(),
+                        name: nameCtrl.text,
+                        phone: phoneCtrl.text,
+                        fullAddress: addressCtrl.text,
+                      ));
+                    } else {
+                      _addresses[index!] = Address(
+                        id: existingAddress.id,
+                        name: nameCtrl.text,
+                        phone: phoneCtrl.text,
+                        fullAddress: addressCtrl.text,
+                        isDefault: existingAddress.isDefault,
+                      );
+                    }
+                  });
+                  Navigator.pop(context);
+                  _showAddressModal();
+                }
+              },
+              child: const Text("Save"),
+            )
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final currentAddress = _addresses.isNotEmpty ? _addresses[_selectedAddressIndex] : null;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
@@ -39,40 +355,35 @@ class _CheckoutPageState extends State<CheckoutPage> {
             // === 1. ADDRESS SECTION ===
             const Text("Address", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            InkWell(
+              onTap: _showAddressModal,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))],
+                ),
+                child: currentAddress != null 
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Lucy Maudy", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      const SizedBox(width: 10),
-                      Text("087654321898", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF69B4),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text("Default", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                      )
+                      Row(
+                        children: [
+                          Text(currentAddress.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          const SizedBox(width: 10),
+                          Text(currentAddress.phone, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                          const Spacer(),
+                          const Text("Change", style: TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold, fontSize: 12)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(currentAddress.fullAddress, style: TextStyle(color: Colors.grey[600], fontSize: 13, height: 1.4)),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Jl. Raya Panjang Pisan, Kab. Kokoyashi, Provinsi Lea Loloya",
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13, height: 1.4),
-                  ),
-                ],
+                  )
+                : const Center(child: Text("Please add an address")),
               ),
             ),
 
@@ -109,10 +420,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          "Estimated Delivery: 3-5 business days.",
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                        ),
+                        Text("Estimated Delivery: 3-5 business days.", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
                       ],
                     ),
                   )
@@ -133,43 +441,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
               child: Column(
                 children: [
-                  _buildProductItem("Luxe Cardy", "S", "Rp249.900", 'https://images.unsplash.com/photo-1581044777550-4cfa60707c03?q=80&w=200'),
+                  _buildProductItem("Luxe Cardy", "S", "Rp249.900", 'assets/luxe cardy.png'),
                   const Divider(height: 1),
-                  _buildProductItem("Sunny Top", "L", "Rp175.900", 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=200'),
+                  _buildProductItem("Sunny Top", "L", "Rp175.900", 'assets/sunny top.png'),
                   const Divider(height: 1),
-                  _buildProductItem("Arket Shirt", "M", "Rp247.000", 'https://images.unsplash.com/photo-1554568218-0f1715e72254?q=80&w=200'),
+                  _buildProductItem("Sweet Shirt", "M", "Rp247.000", 'assets/sweet shirt.png'),
                 ],
               ),
             ),
 
             const SizedBox(height: 24),
 
-            // === 4. PAYMENT METHOD (UPDATED) ===
+            // === 4. PAYMENT METHOD ===
             const Text("Payment Method", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            
-            // Opsi 0: Bank Transfer (Expandable)
-            _buildMainPaymentOption(
-              index: 0, 
-              title: "Bank Transfer", 
-              subOptions: _banks
-            ),
+            _buildMainPaymentOption(index: 0, title: "Bank Transfer", subOptions: _banks),
             const SizedBox(height: 10),
-            
-            // Opsi 1: E-Wallet (Expandable)
-            _buildMainPaymentOption(
-              index: 1, 
-              title: "E-Wallet", 
-              subOptions: _ewallets
-            ),
+            _buildMainPaymentOption(index: 1, title: "E-Wallet", subOptions: _ewallets),
             const SizedBox(height: 10),
-            
-            // Opsi 2: COD (Single)
-            _buildMainPaymentOption(
-              index: 2, 
-              title: "COD (Cash on Delivery)", 
-              subOptions: [] // Kosong karena COD tidak ada sub-opsi
-            ),
+            _buildMainPaymentOption(index: 2, title: "COD (Cash on Delivery)", subOptions: []),
             
             const SizedBox(height: 100),
           ],
@@ -197,9 +487,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                // Di sini kamu bisa kirim data _selectedProvider ke halaman selanjutnya
-                print("Metode Bayar: $_selectedProvider"); 
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentDetailsPage()));
+                _showOrderSuccessDialog(); // PANGGIL DIALOG DENGAN GIF
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF69B4),
@@ -216,14 +504,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  // === WIDGET UTAMA ITEM PEMBAYARAN ===
-  Widget _buildMainPaymentOption({
-    required int index, 
-    required String title, 
-    required List<String> subOptions
-  }) {
-    bool isCategorySelected = _selectedCategory == index;
+  // --- WIDGET HELPER ---
 
+  Widget _buildMainPaymentOption({required int index, required String title, required List<String> subOptions}) {
+    bool isCategorySelected = _selectedCategory == index;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -235,33 +519,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
       ),
       child: Column(
         children: [
-          // Header Kategori (Bank / E-Wallet / COD)
           ListTile(
             onTap: () {
               setState(() {
                 _selectedCategory = index;
-                // Auto-select opsi pertama jika ada sub-opsi, jika tidak pilih titlenya (COD)
-                if (subOptions.isNotEmpty) {
-                  _selectedProvider = subOptions[0];
-                } else {
-                  _selectedProvider = title;
-                }
+                if (subOptions.isNotEmpty) _selectedProvider = subOptions[0];
+                else _selectedProvider = title;
               });
             },
             leading: Icon(
               isCategorySelected ? Icons.radio_button_checked : Icons.radio_button_off,
               color: isCategorySelected ? const Color(0xFFFF69B4) : Colors.grey,
             ),
-            title: Text(
-              title,
-              style: TextStyle(
-                fontWeight: isCategorySelected ? FontWeight.bold : FontWeight.w500,
-                color: Colors.black87,
-              ),
-            ),
+            title: Text(title, style: TextStyle(fontWeight: isCategorySelected ? FontWeight.bold : FontWeight.w500)),
           ),
-
-          // Sub-Opsi (Hanya muncul jika kategori ini dipilih DAN punya sub-opsi)
           if (isCategorySelected && subOptions.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
@@ -274,58 +545,37 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  // === WIDGET SUB-OPSI (Mandiri, BCA, GoPay, dll) ===
   Widget _buildSubOption(String optionName) {
     bool isSelected = _selectedProvider == optionName;
-
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedProvider = optionName;
-        });
-      },
+      onTap: () => setState(() => _selectedProvider = optionName),
       child: Container(
         margin: const EdgeInsets.only(top: 8),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFFF0F5) : Colors.grey[50], // Pink sangat muda jika dipilih
+          color: isSelected ? const Color(0xFFFFF0F5) : Colors.grey[50],
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? const Color(0xFFFF69B4) : Colors.transparent,
-          ),
+          border: Border.all(color: isSelected ? const Color(0xFFFF69B4) : Colors.transparent),
         ),
         child: Row(
           children: [
-            // Bisa diganti logo bank jika ada asset
             Icon(Icons.account_balance_wallet, size: 18, color: isSelected ? const Color(0xFFFF69B4) : Colors.grey),
             const SizedBox(width: 12),
-            Text(
-              optionName,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? const Color(0xFFFF69B4) : Colors.black87
-              ),
-            ),
+            Text(optionName, style: TextStyle(fontSize: 14, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? const Color(0xFFFF69B4) : Colors.black87)),
             const Spacer(),
-            if (isSelected) 
-              const Icon(Icons.check_circle, size: 18, color: Color(0xFFFF69B4)),
+            if (isSelected) const Icon(Icons.check_circle, size: 18, color: Color(0xFFFF69B4)),
           ],
         ),
       ),
     );
   }
 
-  // Widget Item Produk
   Widget _buildProductItem(String title, String size, String price, String imgUrl) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(imgUrl, width: 70, height: 70, fit: BoxFit.cover),
-          ),
+          ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(imgUrl, width: 70, height: 70, fit: BoxFit.cover)),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

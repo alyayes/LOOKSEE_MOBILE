@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'checkout_page.dart'; // Pastikan file ini sudah dibuat dari langkah sebelumnya
+import 'checkout_page.dart'; 
 
 // Model Data untuk Keranjang
 class CartItem {
@@ -30,7 +30,7 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-  // Data Dummy Produk di Keranjang
+  // Data Dummy Produk
   final List<CartItem> _cartItems = [
     CartItem(
       id: '1',
@@ -62,7 +62,7 @@ class _CartPageState extends State<CartPage> {
     ),
   ];
 
-  // Hitung Total Harga (Hanya yang dicentang)
+  // Hitung Total
   double get _totalPrice {
     double total = 0;
     for (var item in _cartItems) {
@@ -73,13 +73,13 @@ class _CartPageState extends State<CartPage> {
     return total;
   }
 
-  // Cek Status Select All
+  // Cek Select All
   bool get _isAllSelected {
     if (_cartItems.isEmpty) return false;
     return _cartItems.every((item) => item.isSelected);
   }
 
-  // Helper Format Rupiah Manual
+  // Format Rupiah
   String _formatCurrency(double amount) {
     return "Rp${amount.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
   }
@@ -87,7 +87,8 @@ class _CartPageState extends State<CartPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      // 1. Ubah background jadi abu muda biar Card Putih terlihat jelas
+      backgroundColor: const Color(0xFFF9F9F9), 
       appBar: AppBar(
         title: const Text(
           "Cart",
@@ -100,9 +101,10 @@ class _CartPageState extends State<CartPage> {
       ),
       body: Column(
         children: [
-          // === 1. SELECT ALL HEADER ===
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          // === HEADER SELECT ALL (Tetap Putih) ===
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             child: Row(
               children: [
                 _customCheckbox(
@@ -116,32 +118,27 @@ class _CartPageState extends State<CartPage> {
                   },
                 ),
                 const SizedBox(width: 12),
-                const Text("Select All", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                const Text("Select All", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
           
-          const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-
-          // === 2. LIST ITEMS ===
+          // === LIST ITEM DENGAN CARD STYLE ===
           Expanded(
             child: _cartItems.isEmpty 
               ? const Center(child: Text("Keranjang kosong"))
               : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  padding: const EdgeInsets.all(20),
                   itemCount: _cartItems.length,
-                  // Garis pemisah antar item
-                  separatorBuilder: (context, index) => const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Divider(thickness: 1, color: Color(0xFFF5F5F5)),
-                  ),
+                  // Ganti Divider dengan Jarak (SizedBox) karena sudah pakai Card
+                  separatorBuilder: (context, index) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
-                    return _buildCartItemTile(_cartItems[index], index);
+                    return _buildCartItemCard(_cartItems[index], index);
                   },
                 ),
           ),
 
-          // === 3. BOTTOM CHECKOUT BAR ===
+          // === BOTTOM BAR ===
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             decoration: BoxDecoration(
@@ -167,10 +164,7 @@ class _CartPageState extends State<CartPage> {
                 ),
                 ElevatedButton(
                   onPressed: _totalPrice > 0 
-                    ? () {
-                        // NAVIGASI KE HALAMAN CHECKOUT
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const CheckoutPage()));
-                      }
+                    ? () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CheckoutPage()))
                     : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF69B4),
@@ -190,92 +184,113 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  // WIDGET ITEM KERANJANG
-  Widget _buildCartItemTile(CartItem item, int index) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Checkbox Item
-        Padding(
-          padding: const EdgeInsets.only(top: 35),
-          child: _customCheckbox(
-            value: item.isSelected,
-            onChanged: (val) {
-              setState(() {
-                item.isSelected = val;
-              });
-            },
+  // === WIDGET ITEM BERBENTUK KARTU (CARD) ===
+  Widget _buildCartItemCard(CartItem item, int index) {
+    return Container(
+      padding: const EdgeInsets.all(12), // Padding dalam kartu
+      decoration: BoxDecoration(
+        color: Colors.white, // Warna kartu putih
+        borderRadius: BorderRadius.circular(16), // Sudut membulat
+        boxShadow: [
+          // Efek bayangan halus biar "pop up"
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
-        ),
-        const SizedBox(width: 15),
-        
-        // Gambar Produk
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.network(item.image, width: 85, height: 85, fit: BoxFit.cover),
-        ),
-        const SizedBox(width: 15),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Checkbox (di tengah vertikal gambar)
+          Padding(
+            padding: const EdgeInsets.only(top: 35),
+            child: _customCheckbox(
+              value: item.isSelected,
+              onChanged: (val) {
+                setState(() {
+                  item.isSelected = val;
+                });
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          
+          // 2. Gambar Produk
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(item.image, width: 85, height: 85, fit: BoxFit.cover),
+          ),
+          const SizedBox(width: 15),
 
-        // Detail Produk
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  // Tombol Hapus (Sampah Pink)
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _cartItems.removeAt(index);
-                      });
-                    },
-                    child: const Icon(Icons.delete_outline, color: Color(0xFFFF69B4), size: 24),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text("Size: ${item.size}", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-              const SizedBox(height: 8),
-              Text(
-                _formatCurrency(item.price), 
-                style: const TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold, fontSize: 16)
-              ),
-              const SizedBox(height: 10),
-              
-              // Quantity Control
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      if (item.quantity > 1) setState(() => item.quantity--);
-                    },
-                    child: _qtyBtn(Icons.remove, isFilled: false),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(item.quantity.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  ),
-                  GestureDetector(
-                    onTap: () => setState(() => item.quantity++),
-                    child: _qtyBtn(Icons.add, isFilled: true),
-                  ),
-                ],
-              )
-            ],
+          // 3. Detail Produk
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Judul & Sampah
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _cartItems.removeAt(index);
+                        });
+                      },
+                      child: const Icon(Icons.delete_outline, color: Color(0xFFFF69B4), size: 22),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 4),
+                Text("Size: ${item.size}", style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                const SizedBox(height: 10),
+                
+                // Harga & Quantity Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _formatCurrency(item.price), 
+                      style: const TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold, fontSize: 15)
+                    ),
+                    
+                    // Quantity Control
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            if (item.quantity > 1) setState(() => item.quantity--);
+                          },
+                          child: _qtyBtn(Icons.remove, isFilled: false),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(item.quantity.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        ),
+                        GestureDetector(
+                          onTap: () => setState(() => item.quantity++),
+                          child: _qtyBtn(Icons.add, isFilled: true),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  // Widget Tombol Quantity (+/-)
+  // Tombol Quantity Kecil
   Widget _qtyBtn(IconData icon, {required bool isFilled}) {
     return Container(
-      width: 28, height: 28,
+      width: 26, height: 26,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isFilled ? const Color(0xFFFF69B4) : Colors.white,
@@ -283,26 +298,27 @@ class _CartPageState extends State<CartPage> {
       ),
       child: Icon(
         icon, 
-        size: 16, 
+        size: 14, 
         color: isFilled ? Colors.white : const Color(0xFFFF69B4)
       ),
     );
   }
 
-  // Widget Checkbox Custom (Kotak Pink)
+  // Checkbox Custom
   Widget _customCheckbox({required bool value, required Function(bool) onChanged}) {
     return GestureDetector(
       onTap: () => onChanged(!value),
       child: Container(
-        width: 20, height: 20,
+        width: 22, height: 22,
         decoration: BoxDecoration(
           color: value ? const Color(0xFFFF69B4) : Colors.transparent,
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: value ? const Color(0xFFFF69B4) : Colors.grey.shade400
+            color: value ? const Color(0xFFFF69B4) : Colors.grey.shade400,
+            width: 1.5,
           ),
         ),
-        child: value ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
+        child: value ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
       ),
     );
   }
