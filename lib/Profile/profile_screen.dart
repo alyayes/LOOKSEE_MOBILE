@@ -14,7 +14,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.pink,
-        // Warna latar belakang utama: merah muda pastel sangat muda
         scaffoldBackgroundColor: const Color(0xFFFDEEF0), 
       ),
       home: const ProfileScreen(),
@@ -22,10 +21,9 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Palet Warna Kustom
 const Color pastelPink = Color(0xFFFDEEF0); 
-const Color brightPink = Color(0xFFFA6297); // Merah muda cerah untuk aksen/tombol
-const Color darkerPink = Color(0xFFFC77A0); // Merah muda lebih gelap untuk BottomNavBar
+const Color brightPink = Color(0xFFFA6297); 
+const Color darkerPink = Color(0xFFFC77A0); 
 const Color greyText = Colors.grey;
 
 class ProfileScreen extends StatelessWidget {
@@ -33,11 +31,9 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // DefaultTabController untuk mengelola TabBar dan TabBarView
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        // Bagian Header Kustom (App Bar)
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(80.0), 
           child: AppBar(
@@ -51,7 +47,6 @@ class ProfileScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Waktu (9:41)
                     const Text(
                       '9:41',
                       style: TextStyle(
@@ -59,11 +54,9 @@ class ProfileScreen extends StatelessWidget {
                         fontSize: 18,
                       ),
                     ),
-                    // Ikon Pengaturan (Gear)
                     IconButton(
                       icon: const Icon(Icons.settings, color: Colors.black54),
                       onPressed: () {
-                        // Aksi pengaturan
                       },
                     ),
                   ],
@@ -73,16 +66,13 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
         
-        // Konten Utama (Informasi Profil + Tab + Feed)
         body: Column(
           children: [
-            // Bagian Informasi Profil
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Foto Profil
                   Stack(
                     alignment: Alignment.center,
                     children: [
@@ -91,19 +81,17 @@ class ProfileScreen extends StatelessWidget {
                         height: 80,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: brightPink, // Latar belakang pink
+                          color: brightPink, 
                         ),
                       ),
                       const CircleAvatar(
                         radius: 38,
-                        // Placeholder untuk gambar profil
                         backgroundImage: AssetImage('assets/profile.jpg'), 
                         backgroundColor: Colors.white,
                       ),
                     ],
                   ),
                   const SizedBox(width: 12),
-                  // Detail Pengguna
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +107,6 @@ class ProfileScreen extends StatelessWidget {
                                 color: Colors.black,
                               ),
                             ),
-                            // Kata Ganti (she/her)
                             const Text(
                               'she/her',
                               style: TextStyle(
@@ -148,10 +135,8 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Tombol Edit Profile
                   ElevatedButton(
                     onPressed: () {
-                      // Aksi Edit Profil
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: brightPink,
@@ -174,14 +159,13 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
 
-            // Tab Bar
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: TabBar(
-                indicatorColor: brightPink, // Warna Indikator
-                indicatorSize: TabBarIndicatorSize.label, // Lebar Indikator
-                labelColor: Colors.black, // Warna teks tab aktif
-                unselectedLabelColor: greyText, // Warna teks tab tidak aktif
+                indicatorColor: brightPink, 
+                indicatorSize: TabBarIndicatorSize.label, 
+                labelColor: Colors.black, 
+                unselectedLabelColor: greyText, 
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 tabs: const [
                   Tab(text: 'My Style'),
@@ -192,11 +176,9 @@ class ProfileScreen extends StatelessWidget {
             ),
             const Divider(height: 1, color: Colors.grey),
             
-            // Konten Tab (Feed)
             Expanded(
               child: TabBarView(
                 children: [
-                  // Konten Feed untuk Tab 'My Style'
                   ListView(
                     padding: const EdgeInsets.only(top: 8.0),
                     children: const [
@@ -211,13 +193,11 @@ class ProfileScreen extends StatelessWidget {
                         date: '1 May 2025',
                         text: "Today's Class was fun i glad to wear this pinky outfit",
                         imagePath: 'assets/to5.jpg',
-                        isTopPost: false, // Nilai ini tidak lagi memengaruhi layout, hanya data
+                        isTopPost: false, 
                         loves: 194, comments: 37, shares: 6,
                       ),
-                      // Tambahkan widget PostCard lainnya untuk demonstrasi scroll
                     ],
                   ),
-                  // Placeholder untuk tab lainnya
                   const Center(child: Text('Konten Galeri')),
                   const Center(child: Text('Konten Tentang Saya')),
                 ],
@@ -226,11 +206,9 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
 
-        // Floating Action Button (FAB)
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            // Aksi Posting Gaya Saya
           },
           backgroundColor: brightPink,
           shape: const CircleBorder(),
@@ -242,9 +220,8 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
 
-        // Bottom Navigation Bar
         bottomNavigationBar: BottomAppBar(
-          color: darkerPink, // Latar belakang merah muda lebih gelap
+          color: darkerPink, 
           shape: const CircularNotchedRectangle(),
           notchMargin: 6.0,
           child: SizedBox(
@@ -252,15 +229,10 @@ class ProfileScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                // Home
                 BottomNavItem(icon: Icons.home, label: 'Home', isActive: false),
-                // Todays Outfit
                 BottomNavItem(icon: Icons.calendar_today, label: 'Todays Outfit', isActive: false),
-                // Post My Style (Placeholder untuk jarak FAB)
                 const SizedBox(width: 40), 
-                // Style Journal
                 BottomNavItem(icon: Icons.article, label: 'Style Journal', isActive: false),
-                // Profile (Aktif)
                 BottomNavItem(icon: Icons.person, label: 'Profile', isActive: true),
               ],
             ),
@@ -271,7 +243,6 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-// Widget untuk satu item postingan feed
 class PostCard extends StatelessWidget {
   final String date;
   final String text;
@@ -299,12 +270,10 @@ class PostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Postingan (Foto Profil, Nama, Tanggal)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
               children: [
-                // Foto Profil Kecil
                 const CircleAvatar(
                   radius: 18,
                   backgroundImage: AssetImage('assets/profile.jpg'),
@@ -338,7 +307,6 @@ class PostCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           
-          // Teks Postingan
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
@@ -348,11 +316,10 @@ class PostCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           
-          // Gambar Postingan (Dibuat seragam untuk semua PostCard)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: AspectRatio(
-              aspectRatio: 1.0, // Rasio aspek persegi (Gambar penuh lebar)
+              aspectRatio: 1.0, 
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
@@ -369,10 +336,8 @@ class PostCard extends StatelessWidget {
             ),
           ),
           
-          // Baris Interaksi (Hati, Komentar, Bagikan) - Selalu di bawah gambar
           Padding(
             padding: const EdgeInsets.only(top: 8.0, left: 16.0, right: 16.0),
-            // Mengatur warna ikon dan teks ke abu-abu gelap agar terlihat di latar belakang terang.
             child: _buildInteractionRow(loves, comments, shares, color: Colors.grey[700]!),
           ),
         ],
@@ -380,8 +345,6 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  // Fungsi pembantu untuk membuat baris interaksi
-  // Menggunakan default color: greyText (sekarang disetel ke Colors.grey[700] di atas)
   Widget _buildInteractionRow(int loves, int comments, int shares, {Color color = greyText}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -395,7 +358,6 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  // Fungsi pembantu untuk ikon interaksi individual
   Widget _buildInteractionItem(IconData icon, int count, Color color) {
     return Row(
       children: [
@@ -410,9 +372,7 @@ class PostCard extends StatelessWidget {
   }
 }
 
-// Widget untuk satu item navigasi bawah (tidak berubah)
 class BottomNavItem extends StatelessWidget {
-// ... (Kode BottomNavItem tidak berubah)
   final IconData icon;
   final String label;
   final bool isActive;
@@ -429,7 +389,6 @@ class BottomNavItem extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: () {
-          // Aksi navigasi
         },
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -440,7 +399,6 @@ class BottomNavItem extends StatelessWidget {
               color: isActive ? Colors.white : Colors.white70,
               size: 26,
             ),
-            // Teks dihilangkan karena ruang vertikal terbatas
           ],
         ),
       ),

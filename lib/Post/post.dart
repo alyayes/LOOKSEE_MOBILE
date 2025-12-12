@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'gallery.dart';
+import '../todaysOutfit/todays_outfit.dart';
 
-// --- MAIN DAN SETUP APP ---
 void main() {
-  // Pastikan Anda memanggil WidgetsFlutterBinding.ensureInitialized();
-  // jika Anda melakukan inisialisasi lebih lanjut di main(), tetapi untuk UI ini tidak wajib.
   runApp(const MyApp());
 }
 
@@ -15,7 +14,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Post My Style UI Final',
       theme: ThemeData(
-        // Menggunakan Material 3 untuk gaya modern
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
         useMaterial3: true,
       ),
@@ -24,12 +22,42 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// --- HALAMAN UTAMA: PostMyStyleScreen ---
-class PostMyStyleScreen extends StatelessWidget {
+class PostMyStyleScreen extends StatefulWidget {
   const PostMyStyleScreen({super.key});
 
-  // Ganti dengan nama file gambar Anda yang sebenarnya
-  final String assetImagePath = 'assets/to29.jpg';
+  @override
+  State<PostMyStyleScreen> createState() => _PostMyStyleScreenState();
+}
+
+class _PostMyStyleScreenState extends State<PostMyStyleScreen> {
+  final String assetImagePath = 'assets/to4.jpg';
+  
+  String? _selectedMood = 'Very Happy'; 
+
+  final List<String> moods = const [
+    'Very Happy',
+    'Happy',
+    'Neutral',
+    'Sad',
+    'Very Sad',
+  ];
+
+  void _selectMood(String mood) {
+    setState(() {
+      _selectedMood = mood;
+    });
+  }
+
+  void _handlePost() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TodaysOutfitScreen(),
+      ),
+    );
+    
+    debugPrint('Mood yang diposting: $_selectedMood');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +76,12 @@ class PostMyStyleScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            // Aksi kembali
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ImageGridScreen(), 
+              ),
+            );
           },
         ),
       ),
@@ -57,7 +90,6 @@ class PostMyStyleScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // 1. Area Gambar Postingan
             Center(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8.0),
@@ -67,7 +99,6 @@ class PostMyStyleScreen extends StatelessWidget {
                   width: 150,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
-                    // Tampilkan kotak abu-abu jika gambar gagal dimuat (misalnya, nama file salah)
                     return Container(
                       height: 200,
                       width: 150,
@@ -80,12 +111,10 @@ class PostMyStyleScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16.0),
 
-            // 2. Input Caption
             const TextField(
               decoration: InputDecoration(
                 hintText: 'Add a caption...',
                 hintStyle: TextStyle(color: Colors.grey),
-                // Menghilangkan garis input standar dan hanya menyisakan garis bawah tipis
                 border: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey, width: 0.5),
                 ),
@@ -101,33 +130,34 @@ class PostMyStyleScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24.0),
 
-            // 3. Bagian Add Mood
-            Row(
+            const Row(
               children: <Widget>[
-                const Icon(Icons.sentiment_satisfied_alt, color: Colors.black54),
-                const SizedBox(width: 8.0),
-                const Text(
+                Icon(Icons.sentiment_satisfied_alt, color: Colors.black54),
+                SizedBox(width: 8.0),
+                Text(
                   'Add Mood',
                   style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
             const SizedBox(height: 12.0),
-            const MoodChipsRow(),
+            
+            MoodChipsRow(
+              moods: moods,
+              selectedMood: _selectedMood,
+              onMoodSelected: _selectMood,
+            ),
 
             const SizedBox(height: 32.0),
 
-            // 4. Bagian Add Items (Header dan Tombol +)
             const AddItemsHeader(),
             const SizedBox(height: 12.0),
 
-            // 5. Daftar Item Input (2 item)
             const ProductItemInput(),
             const ProductItemInput(),
 
             const SizedBox(height: 40.0),
 
-            // 6. Tombol Post (Gaya sesuai gambar dengan bayangan)
             Center(
               child: Container(
                 width: double.infinity,
@@ -139,20 +169,18 @@ class PostMyStyleScreen extends StatelessWidget {
                       color: Colors.pink.shade300.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 7,
-                      offset: const Offset(0, 3), // Bayangan ke bawah
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Aksi Post
-                  },
+                  onPressed: _handlePost,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.pink.shade300,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
-                    elevation: 0, // Elevation dipindahkan ke Container BoxShadow
+                    elevation: 0,
                     padding: EdgeInsets.zero,
                   ),
                   child: const Text(
@@ -174,41 +202,41 @@ class PostMyStyleScreen extends StatelessWidget {
   }
 }
 
-// --- KOMPONEN TAMBAHAN ---
-
-// Widget untuk Deretan Mood Chips
 class MoodChipsRow extends StatelessWidget {
-  const MoodChipsRow({super.key});
+  final List<String> moods;
+  final String? selectedMood;
+  final ValueChanged<String> onMoodSelected;
+
+  const MoodChipsRow({
+    super.key,
+    required this.moods,
+    required this.selectedMood,
+    required this.onMoodSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Definisi mood (Very Happy dan Very Sad terlihat terpilih)
-    final List<Map<String, dynamic>> moods = [
-      {'label': 'Very Happy', 'isSelected': true},
-      {'label': 'Happy', 'isSelected': false},
-      {'label': 'Neutral', 'isSelected': false},
-      {'label': 'Sad', 'isSelected': false},
-      {'label': 'Very Sad', 'isSelected': true},
-    ];
-
     return Wrap(
       spacing: 8.0,
       runSpacing: 4.0,
-      children: moods.map((mood) {
-        final bool isSelected = mood['isSelected'] as bool;
-        return Chip(
-          label: Text(
-            mood['label'] as String,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black,
-              fontWeight: FontWeight.w500,
-              fontSize: 14.0,
+      children: moods.map((moodLabel) {
+        final bool isSelected = moodLabel == selectedMood;
+        return InkWell(
+          onTap: () => onMoodSelected(moodLabel),
+          child: Chip(
+            label: Text(
+              moodLabel,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w500,
+                fontSize: 14.0,
+              ),
             ),
-          ),
-          backgroundColor: isSelected ? Colors.grey.shade700 : Colors.grey.shade300,
-          padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
+            backgroundColor: isSelected ? Colors.pink.shade400 : Colors.grey.shade300,
+            padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
           ),
         );
       }).toList(),
@@ -216,7 +244,7 @@ class MoodChipsRow extends StatelessWidget {
   }
 }
 
-// Widget untuk Header "Add Items" dan Tombol Plus
+
 class AddItemsHeader extends StatelessWidget {
   const AddItemsHeader({super.key});
 
@@ -225,29 +253,27 @@ class AddItemsHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
-        Row(
+        const Row(
           children: <Widget>[
-            const Icon(Icons.shopping_bag_outlined, color: Colors.black54),
-            const SizedBox(width: 8.0),
-            const Text(
+            Icon(Icons.shopping_bag_outlined, color: Colors.black54),
+            SizedBox(width: 8.0),
+            Text(
               'Add Items',
               style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.w600),
             ),
           ],
         ),
-        // Tombol "Add" (+)
         Container(
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: Colors.pink.shade100, // Warna latar belakang pink muda
+            color: Colors.pink.shade100,
             shape: BoxShape.circle,
           ),
           child: IconButton(
             icon: const Icon(Icons.add, color: Colors.pink),
             iconSize: 20,
             onPressed: () {
-              // Aksi menambahkan item
             },
           ),
         ),
@@ -256,13 +282,11 @@ class AddItemsHeader extends StatelessWidget {
   }
 }
 
-// Widget untuk Input Item Produk (Nama dan Link)
 class ProductItemInput extends StatelessWidget {
   const ProductItemInput({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Gaya border input field
     const OutlineInputBorder inputBorder = OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(5)),
       borderSide: BorderSide(color: Colors.grey),
@@ -273,10 +297,9 @@ class ProductItemInput extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Expanded(
+          const Expanded(
             child: Column(
-              children: const <Widget>[
-                // Input Product Name
+              children: <Widget>[
                 TextField(
                   decoration: InputDecoration(
                     hintText: 'Product name',
@@ -288,7 +311,6 @@ class ProductItemInput extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 8.0),
-                // Input Product Link
                 TextField(
                   decoration: InputDecoration(
                     hintText: 'Put the product link here',
@@ -303,14 +325,13 @@ class ProductItemInput extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8.0),
-          // Tombol Hapus (-)
           Padding(
             padding: const EdgeInsets.only(top: 10.0),
             child: Container(
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: Colors.pink.shade50, // Warna latar belakang pink sangat muda
+                color: Colors.pink.shade50,
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -319,7 +340,6 @@ class ProductItemInput extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 onPressed: () {
-                  // Aksi menghapus item
                 },
               ),
             ),
