@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../navbar/navbar.dart'; 
+import '../cart/cart_page.dart'; 
 
 void main() {
   runApp(const MyApp());
@@ -13,7 +15,8 @@ class MyApp extends StatelessWidget {
       title: 'Profil Lucy',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.pink,
+        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.pink)
+            .copyWith(background: const Color(0xFFFDEEF0)),
         scaffoldBackgroundColor: const Color(0xFFFDEEF0), 
       ),
       home: const ProfileScreen(),
@@ -52,12 +55,29 @@ class ProfileScreen extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
+                        color: Colors.black, 
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.settings, color: Colors.black54),
-                      onPressed: () {
-                      },
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black54),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const CartPage()),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.settings, color: Colors.black54),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Settings Tapped!')),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -137,6 +157,9 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Edit Profile Tapped!')),
+                       );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: brightPink,
@@ -198,46 +221,14 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const Center(child: Text('Konten Galeri')),
-                  const Center(child: Text('Konten Tentang Saya')),
+                  const GalleryGrid(),
+                  const AboutMeTab(),
                 ],
               ),
             ),
           ],
         ),
-
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-          },
-          backgroundColor: brightPink,
-          shape: const CircleBorder(),
-          elevation: 4.0,
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 30,
-          ),
-        ),
-
-        bottomNavigationBar: BottomAppBar(
-          color: darkerPink, 
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 6.0,
-          child: SizedBox(
-            height: 60.0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                BottomNavItem(icon: Icons.home, label: 'Home', isActive: false),
-                BottomNavItem(icon: Icons.calendar_today, label: 'Todays Outfit', isActive: false),
-                const SizedBox(width: 40), 
-                BottomNavItem(icon: Icons.article, label: 'Style Journal', isActive: false),
-                BottomNavItem(icon: Icons.person, label: 'Profile', isActive: true),
-              ],
-            ),
-          ),
-        ),
+        bottomNavigationBar: const CustomNavBar(currentIndex: 1),
       ),
     );
   }
@@ -325,11 +316,14 @@ class PostCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   color: Colors.pink[50],
                 ),
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Center(
-                    child: Text('Placeholder Gambar\n($date)', textAlign: TextAlign.center, style: TextStyle(color: greyText)),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    imagePath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Center(
+                      child: Text('Placeholder Gambar\n($date)', textAlign: TextAlign.center, style: TextStyle(color: greyText)),
+                    ),
                   ),
                 ),
               ),
@@ -372,36 +366,206 @@ class PostCard extends StatelessWidget {
   }
 }
 
-class BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
+class GalleryGrid extends StatelessWidget {
+  const GalleryGrid({super.key});
 
-  const BottomNavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    super.key,
-  });
+  final List<String> _galleryImages = const [
+    'assets/to23.jpg',
+    'assets/to24.jpg',
+    'assets/to25.jpg',
+    'assets/to26.jpg',
+    'assets/to27.jpg',
+    'assets/to28.jpg',
+    'assets/to30.jpg',
+    'assets/to31.jpg',
+    'assets/to32.jpg',
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(
-              icon,
-              color: isActive ? Colors.white : Colors.white70,
-              size: 26,
-            ),
-          ],
+    return Padding(
+      padding: const EdgeInsets.all(1.0),
+      child: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 1.0,
+          mainAxisSpacing: 1.0,
+          childAspectRatio: 1.0,
         ),
+        itemCount: _galleryImages.length,
+        itemBuilder: (context, index) {
+          final imagePath = _galleryImages[index];
+          return Container(
+            color: Colors.white,
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.pink[100],
+                  child: Center(
+                    child: Text(
+                      'Image ${index + 1}\n(Not Found)',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.black54, fontSize: 12),
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
       ),
+    );
+  }
+}
+
+class AboutMeTab extends StatelessWidget {
+  const AboutMeTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Bio Summary',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.pink.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Text(
+              'Hi! I\'m Lucy, a fashion enthusiast with a passion for pastel colors and cozy outfits. I love coffee, traveling, and sharing my daily style tips! Life is better in pink! 💖✨',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                height: 1.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          const Text(
+            'Details & Interests',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          _buildDetailCard(
+            icon: Icons.cake_outlined,
+            title: 'Birthday',
+            value: 'October 27th',
+            context: context,
+          ),
+          _buildDetailCard(
+            icon: Icons.location_on_outlined,
+            title: 'Location',
+            value: 'Seoul, South Korea',
+            context: context,
+          ),
+          _buildDetailCard(
+            icon: Icons.work_outline,
+            title: 'Occupation',
+            value: 'Student & Digital Creator',
+            context: context,
+          ),
+          const SizedBox(height: 16),
+          
+          const Text(
+            'Favorite Things',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8.0,
+            runSpacing: 8.0,
+            children: [
+              _buildInterestChip('Pastel Fashion'),
+              _buildInterestChip('Latte Art'),
+              _buildInterestChip('Reading Fantasy'),
+              _buildInterestChip('Cat Lover 😻'),
+              _buildInterestChip('DIY Crafting'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required BuildContext context,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: brightPink, size: 24),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: greyText,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInterestChip(String label) {
+    return Chip(
+      label: Text(
+        label,
+        style: const TextStyle(color: Colors.white, fontSize: 13),
+      ),
+      backgroundColor: darkerPink,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }
