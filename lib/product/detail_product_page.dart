@@ -13,17 +13,17 @@ class _DetailProductPageState extends State<DetailProductPage> {
   bool _isFavorite = false;
   
   final List<String> _productImages = [
-    'assets/prod1.jpg',
-    'assets/prod2.jpg',
-    'assets/prod3.jpg',
+    'assets/lily depan.png',
+    'assets/model.png',
+    'assets/lily belakang.png',
   ];
   
   final List<String> _sizes = ['S', 'M', 'L'];
   
   final List<Map<String, String>> _lookStyleUsers = [
-    {'image': 'assets/prod4.jpg', 'name': 'eunsoo0o'},
-    {'image': 'assets/prod5.jpg', 'name': 'priwooa'},
-    {'image': 'assets/prod6.jpg', 'name': 'mello'},
+    {'image': 'assets/eunsoo.png', 'name': 'eunsoo0o'},
+    {'image': 'assets/priwooa.png', 'name': 'priwooa'},
+    {'image': 'assets/melowdy.png', 'name': 'mello'},
   ];
   
   final List<Map<String, dynamic>> _reviews = [
