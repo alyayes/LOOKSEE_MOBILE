@@ -7,10 +7,12 @@ import 'product/product.dart';
 import 'product/detail_product_page.dart';
 import 'favorite/favorite.dart';
 import 'landing/landing_page.dart';
+import 'auth/register_page.dart';
 import 'cart/cart_page.dart';
 import 'checkout/checkout_page.dart';
 import 'orders/my_orders_page.dart';
 import 'payment/payment_details_page.dart';
+import './todaysOutfit/todays_outfit.dart';
 
 void main() {
   runApp(const MyApp());
@@ -42,6 +44,8 @@ class MyApp extends StatelessWidget {
         '/checkout': (context) => const CheckoutPage(),
         '/my-orders': (context) => const MyOrdersPage(),
         '/payment-details': (context) => const PaymentDetailsPage(),
+        '/todaysoutfit': (context) => const TodaysOutfitApp(),
+
       },
     );
   }

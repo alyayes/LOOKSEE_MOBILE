@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../navbar/navbar.dart';
 
 void main() {
   runApp(const TodaysOutfitApp());
@@ -31,12 +32,7 @@ class TodaysOutfitApp extends StatelessWidget {
   }
 }
 
-// Enum untuk filter kategori
 enum FilterCategory { all, woman, man }
-
-// =================================================================
-// MAIN SCREEN DENGAN TABBAR & TABBARVIEW
-// =================================================================
 
 class TodaysOutfitScreen extends StatefulWidget {
   const TodaysOutfitScreen({super.key});
@@ -45,17 +41,16 @@ class TodaysOutfitScreen extends StatefulWidget {
   State<TodaysOutfitScreen> createState() => _TodaysOutfitScreenState();
 }
 
-// Tambahkan SingleTickerProviderStateMixin untuk TabController
-class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTickerProviderStateMixin {
+class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
+    with SingleTickerProviderStateMixin {
   FilterCategory _selectedFilter = FilterCategory.all;
   late TabController _tabController;
 
-  // --- 1. Data untuk Tab EXPLORE (Data Utama) ---
   final List<Map<String, dynamic>> exploreItems = const [
     {
       'title': 'Pinky outfit for toda...', 'user': 'Lucy', 'mood': 'Happy',
       'moodColor': Color(0xFFF7A2B4), 'imageColor': Color(0xFFFDE4E6),
-      'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to4.jpg', 
+      'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to4.jpg',
     },
     {
       'title': 'Just simple fit', 'user': 'Louis', 'mood': 'Neutral',
@@ -82,14 +77,33 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
       'moodColor': Color(0xFF90EE90), 'imageColor': Color(0xFFD3D3D3),
       'profileColor': Color(0xFF87CEEB), 'imagePath': 'assets/to6.jpeg',
     },
+    {
+      'title': 'Pinky outfit for toda...', 'user': 'Lucy', 'mood': 'Happy',
+      'moodColor': Color(0xFFF7A2B4), 'imageColor': Color(0xFFFDE4E6),
+      'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to35.jpg',
+    },
+    {
+      'title': 'Just simple fit', 'user': 'Louis', 'mood': 'Neutral',
+      'moodColor': Color(0xFFD4D4D4), 'imageColor': Color(0xFFEBEBEB),
+      'profileColor': Color(0xFFB0C4DE), 'imagePath': 'assets/to38.jpg',
+    },
+    {
+      'title': "Today's Class was...", 'user': 'Lucy', 'mood': 'Very Happy',
+      'moodColor': Color(0xFFF28F9E), 'imageColor': Color(0xFFF5F5F5),
+      'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to37.jpg',
+    },
+    {
+      'title': 'Gloomy day, gloo...', 'user': 'Louis', 'mood': 'Sad',
+      'moodColor': Color(0xFFADD8E6), 'imageColor': Color(0xFF303030),
+      'profileColor': Color(0xFFB0C4DE), 'imagePath': 'assets/to39.jpg',
+    },
   ];
 
-  // --- 2. Data untuk Tab TRENDS (Layout sama, Gambar Beda) ---
   final List<Map<String, dynamic>> trendsItems = const [
     {
       'title': 'Best Streetwear 2024', 'user': 'Sam', 'mood': 'Sad',
       'moodColor': Color(0xFF4682B4), 'imageColor': Color(0xFFE0FFFF),
-      'profileColor': Color(0xFFA9A9A9), 'imagePath': 'assets/to2.jpg', 
+      'profileColor': Color(0xFFA9A9A9), 'imagePath': 'assets/to2.jpg',
     },
     {
       'title': 'Aesthetic Vintage', 'user': 'Anna', 'mood': 'Happy',
@@ -101,7 +115,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
       'moodColor': Color(0xFF696969), 'imageColor': Color(0xFFF0F0F0),
       'profileColor': Color(0xFF6A5ACD), 'imagePath': 'assets/to1.jpg',
     },
-    // Menggunakan data explore untuk sisa list
     ...const [
       {
         'title': 'Gloomy day, gloo...', 'user': 'Louis', 'mood': 'Sad',
@@ -121,29 +134,27 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
     ]
   ];
 
-  // --- 3. Data untuk Tab LATEST (Layout sama, Gambar Beda) ---
   final List<Map<String, dynamic>> latestItems = const [
     {
       'title': 'New In: Velvet Dress', 'user': 'Eva', 'mood': 'Verry Sad',
       'moodColor': Color(0xFF800080), 'imageColor': Color(0xFFE6E6FA),
-      'profileColor': Color(0xFFC71585), 'imagePath': 'assets/to11.jpeg', 
+      'profileColor': Color(0xFFC71585), 'imagePath': 'assets/to11.jpeg',
     },
     {
       'title': 'Cargo Pants Fit', 'user': 'Tom', 'mood': 'Neutral',
       'moodColor': Color(0xFF6B8E23), 'imageColor': Color(0xFFF5F5DC),
-      'profileColor': Color(0xFF8B4513), 'imagePath': 'assets/to4.jpg',
+      'profileColor': Color(0xFF8B4513), 'imagePath': 'assets/to24.jpg',
     },
     {
       'title': 'Casual Sunday', 'user': 'Jane', 'mood': 'Happy',
       'moodColor': Color(0xFF00CED1), 'imageColor': Color(0xFFF0FFFF),
       'profileColor': Color(0xFF4682B4), 'imagePath': 'assets/to8.jpg',
     },
-    // Menggunakan data explore untuk sisa list
     ...const [
       {
         'title': 'Pinky outfit for toda...', 'user': 'Lucy', 'mood': 'Happy',
         'moodColor': Color(0xFFF7A2B4), 'imageColor': Color(0xFFFDE4E6),
-        'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to4.jpg', 
+        'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to4.jpg',
       },
       {
         'title': 'Just simple fit', 'user': 'Louis', 'mood': 'Neutral',
@@ -158,7 +169,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
     ]
   ];
 
-
   @override
   void initState() {
     super.initState();
@@ -170,8 +180,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
     _tabController.dispose();
     super.dispose();
   }
-
-  // --- Helper Functions ---
 
   Widget _buildMoodTag(String mood, Color color) {
     return Container(
@@ -195,7 +203,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Gambar Outfit (Menggunakan Image.asset)
         AspectRatio(
           aspectRatio: 3 / 4,
           child: ClipRRect(
@@ -208,19 +215,21 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
                       return Container(
                         color: Colors.red[100],
                         child: const Center(
-                          child: Icon(Icons.error_outline, color: Colors.red, size: 40),
+                          child: Icon(Icons.error_outline,
+                              color: Colors.red, size: 40),
                         ),
                       );
                     },
                   )
                 : Container(
                     color: item['imageColor'],
-                    child: const Center(child: Icon(Icons.photo, size: 40, color: Colors.grey)),
+                    child: const Center(
+                        child: Icon(Icons.photo,
+                            size: 40, color: Colors.grey)),
                   ),
           ),
         ),
         const SizedBox(height: 4),
-        // Title
         Text(
           item['title'] as String,
           style: const TextStyle(
@@ -231,7 +240,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 2),
-        // User Info dan Mood Tag
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -266,11 +274,14 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
     );
   }
 
-  Widget _buildCategoryPill(String text, FilterCategory category, {IconData? icon, bool isStatic = false}) {
+  Widget _buildCategoryPill(String text, FilterCategory category,
+      {IconData? icon, bool isStatic = false}) {
     bool isSelected = !isStatic && _selectedFilter == category;
     Color textColor = isSelected ? Colors.white : Colors.black;
-    Color backgroundColor = isSelected ? const Color(0xFFF7A2B4) : Colors.white;
-    Color borderColor = isSelected ? const Color(0xFFF7A2B4) : Colors.grey.shade300;
+    Color backgroundColor =
+        isSelected ? const Color(0xFFF7A2B4) : Colors.white;
+    Color borderColor =
+        isSelected ? const Color(0xFFF7A2B4) : Colors.grey.shade300;
 
     return Container(
       margin: const EdgeInsets.only(right: 8),
@@ -291,7 +302,8 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           minimumSize: Size.zero,
         ),
         child: Row(
@@ -304,7 +316,8 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
               text,
               style: TextStyle(
                 color: textColor,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight:
+                    isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 14,
               ),
             ),
@@ -314,42 +327,14 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
     );
   }
 
-  Widget _buildBottomNavItem(IconData icon, String label, bool isSelected) {
-    final Color selectedColor = const Color(0xFFF7A2B4);
-    final Color defaultColor = Colors.grey;
-
-    return InkWell(
-      onTap: () {},
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? selectedColor : defaultColor,
-            size: 24,
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: isSelected ? selectedColor : defaultColor,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // --- Custom App Bar (Hanya Judul dan Pencarian) ---
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(60.0),
         child: Padding(
-          padding: const EdgeInsets.only(top: 10.0, left: 16.0, right: 16.0),
+          padding:
+              const EdgeInsets.only(top: 10.0, left: 16.0, right: 16.0),
           child: AppBar(
             automaticallyImplyLeading: false,
             title: const Text('Todays Outfit'),
@@ -366,7 +351,8 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Icon(Icons.search, color: Colors.grey, size: 20),
+                      Icon(Icons.search,
+                          color: Colors.grey, size: 20),
                     ],
                   ),
                 ),
@@ -375,137 +361,88 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen> with SingleTick
           ),
         ),
       ),
-      // --- Area Konten Utama ---
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Baris Navigasi Horizontal/Tab ---
           Padding(
-            padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  indicatorColor: const Color(0xFFF7A2B4),
-                  labelColor: const Color(0xFFF7A2B4),
-                  unselectedLabelColor: Colors.black,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16),
-                  indicatorSize: TabBarIndicatorSize.label,
-                  tabAlignment: TabAlignment.start,
-                  tabs: const [
-                    Tab(text: 'Explore'),
-                    Tab(text: 'Trends'),
-                    Tab(text: 'Latest'),
-                  ],
+            padding:
+                const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              indicatorColor: const Color(0xFFF7A2B4),
+              labelColor: const Color(0xFFF7A2B4),
+              unselectedLabelColor: Colors.black,
+              labelStyle: const TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 16),
+              unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.normal, fontSize: 16),
+              indicator: const UnderlineTabIndicator(
+                borderSide: BorderSide(
+                  color: Color(0xFFF7A2B4),
+                  width: 3.0,
                 ),
-                const Divider(height: 1, color: Colors.grey),
+                insets: EdgeInsets.only(bottom: 5.0),
+              ),
+              indicatorSize: TabBarIndicatorSize.label,
+              tabAlignment: TabAlignment.start,
+              tabs: const [
+                Tab(text: 'Explore'),
+                Tab(text: 'Trends'),
+                Tab(text: 'Latest'),
               ],
             ),
           ),
 
-          // --- Baris Filter/Kategori (Horizontal Scroll) ---
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
                   _buildCategoryPill('All', FilterCategory.all),
                   _buildCategoryPill('Woman', FilterCategory.woman),
                   _buildCategoryPill('Man', FilterCategory.man),
-                  _buildCategoryPill('Filter', FilterCategory.all, icon: Icons.filter_list, isStatic: true),
+                  _buildCategoryPill('Filter', FilterCategory.all,
+                      icon: Icons.filter_list, isStatic: true),
                 ],
               ),
             ),
           ),
 
-          // --- TabBarView (Konten Halaman yang Berpindah) ---
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                // EXPLORE: Meneruskan exploreItems
                 ExplorePage(
-                  outfitItems: exploreItems, 
-                  buildOutfitItem: _buildOutfitItem,
-                ),
-                // TRENDS: Meneruskan trendsItems
+                    outfitItems: exploreItems,
+                    buildOutfitItem: _buildOutfitItem),
                 ExplorePage(
-                  outfitItems: trendsItems, 
-                  buildOutfitItem: _buildOutfitItem,
-                ),
-                // LATEST: Meneruskan latestItems
+                    outfitItems: trendsItems,
+                    buildOutfitItem: _buildOutfitItem),
                 ExplorePage(
-                  outfitItems: latestItems, 
-                  buildOutfitItem: _buildOutfitItem,
-                ),
+                    outfitItems: latestItems,
+                    buildOutfitItem: _buildOutfitItem),
               ],
             ),
           ),
         ],
       ),
-
-      // --- Custom Bottom Navigation Bar ---
-      bottomNavigationBar: Container(
-        height: 70,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 5,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomAppBar(
-          color: Colors.transparent,
-          elevation: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildBottomNavItem(Icons.home, 'Home', false),
-              _buildBottomNavItem(const MyCustomIconData(0xe900), 'Todays Outfit', true),
-              const SizedBox(width: 40),
-              _buildBottomNavItem(Icons.file_copy, 'Style Journal', false),
-              _buildBottomNavItem(Icons.person, 'Profile', false),
-            ],
-          ),
-        ),
-      ),
-      // --- Tombol Aksi Terapung (FAB) Sentral ---
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(top: 25.0),
-        child: FloatingActionButton(
-          onPressed: () {
-            print('Post My Style ditekan!');
-          },
-          backgroundColor: const Color(0xFFF7A2B4),
-          shape: const CircleBorder(),
-          child: const Icon(Icons.add, color: Colors.white, size: 30),
-        ),
-      ),
+      bottomNavigationBar: const CustomNavBar(currentIndex: 1),
     );
   }
 }
 
-// =================================================================
-// HALAMAN KONTEN TAB
-// =================================================================
-
 class ExplorePage extends StatelessWidget {
   final List<Map<String, dynamic>> outfitItems;
-  final Widget Function(Map<String, dynamic>) buildOutfitItem; 
+  final Widget Function(Map<String, dynamic>) buildOutfitItem;
 
   const ExplorePage({
-    super.key, 
-    required this.outfitItems, 
-    required this.buildOutfitItem
+    super.key,
+    required this.outfitItems,
+    required this.buildOutfitItem,
   });
 
   @override
@@ -513,8 +450,9 @@ class ExplorePage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: GridView.builder(
-        padding: const EdgeInsets.only(bottom: 16.0),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        padding: const EdgeInsets.only(bottom: 80.0),
+        gridDelegate:
+            const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 10.0,
           mainAxisSpacing: 10.0,
@@ -523,29 +461,24 @@ class ExplorePage extends StatelessWidget {
         itemCount: outfitItems.length,
         itemBuilder: (context, index) {
           final item = outfitItems[index];
-          
-          // GestureDetector membuat item dapat diklik
-          return GestureDetector( 
+
+          return GestureDetector(
             onTap: () {
-              // Navigasi ke halaman detail saat diklik
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => OutfitDetailPage(item: item),
+                  builder: (context) =>
+                      OutfitDetailPage(item: item),
                 ),
               );
             },
-            child: buildOutfitItem(item), // Memanggil fungsi item builder dari parent
+            child: buildOutfitItem(item),
           );
         },
       ),
     );
   }
 }
-
-// =================================================================
-// HALAMAN DETAIL (TARGET KLIK POSTINGAN)
-// =================================================================
 
 class OutfitDetailPage extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -566,19 +499,23 @@ class OutfitDetailPage extends StatelessWidget {
             children: [
               Text(
                 'Anda telah melihat postingan:',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style:
+                    Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 10),
               Text(
                 item['title'] as String,
-                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium!
+                    .copyWith(
                       color: const Color(0xFFF7A2B4),
                       fontWeight: FontWeight.bold,
                     ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              // Menampilkan gambar (jika ada)
+
               if (item['imagePath'] != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
@@ -586,32 +523,31 @@ class OutfitDetailPage extends StatelessWidget {
                     item['imagePath'] as String,
                     height: 300,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
+                    errorBuilder:
+                        (context, error, stackTrace) {
                       return Container(
                         height: 300,
                         color: Colors.red[100],
-                        child: const Center(child: Text('Gagal memuat gambar detail.')),
+                        child: const Center(
+                            child: Text(
+                                'Gagal memuat gambar detail.')),
                       );
                     },
                   ),
                 ),
               const SizedBox(height: 20),
-              Text('Diposting oleh: ${item['user']} (Mood: ${item['mood']})'),
+
+              Text(
+                  'Diposting oleh: ${item['user']} (Mood: ${item['mood']})'),
+
               const SizedBox(height: 40),
-              const Text('Ini adalah halaman detail outfit yang dapat Anda kembangkan lebih lanjut.'),
+
+              const Text(
+                  'Ini adalah halaman detail outfit yang dapat Anda kembangkan lebih lanjut.'),
             ],
           ),
         ),
       ),
     );
   }
-}
-
-// Kelas data ikon kustom untuk mensimulasikan ikon orang/grup
-class MyCustomIconData extends IconData {
-  const MyCustomIconData(int codePoint)
-      : super(
-          codePoint,
-          fontFamily: 'MaterialIcons',
-        );
 }
