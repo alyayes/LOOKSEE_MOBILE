@@ -71,7 +71,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
       paymentMethod: "COD",
       total: "Rp 175.000",
       items: [
-        OrderItem(title: "Lily Top", img: "https://images.unsplash.com/photo-1620799140408-ed5341cd2431?q=80&w=200", size: "M", price: "Rp 175.000"),
+        OrderItem(title: "Lily Top", img: "assets/lily top.png", size: "M", price: "Rp 175.000"),
       ],
     ),
   ];

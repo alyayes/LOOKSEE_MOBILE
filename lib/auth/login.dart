@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'register.dart'; // Pastikan file register.dart ada
+import 'register_page.dart'; // Pastikan file register.dart ada
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

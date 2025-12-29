@@ -7,6 +7,7 @@ import '../post/gallery.dart';
 // === IMPORT KEDUA HALAMAN INI AGAR TIDAK ERROR ===
 import '../todaysOutfit/todays_outfit.dart';   // Untuk TodaysOutfitScreen
 import '../styleJournal/style_journal.dart';   // Untuk StyleJournalScreen
+import '../Profile/profile_screen.dart';
 
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -220,8 +221,10 @@ class CustomNavBar extends StatelessWidget {
           );
         }
         else if (index == 4) {
-          // KE PROFILE
-          // Navigator.pushNamed(context, '/profile');
+          Navigator.push(
+            context, 
+            MaterialPageRoute(builder: (context) => const ProfileScreen())
+          );
         }
       },
       child: Container(

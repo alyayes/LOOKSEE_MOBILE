@@ -42,14 +42,14 @@ class _CartPageState extends State<CartPage> {
       title: "Luxe Cardy",
       size: "S",
       price: 249900,
-      image: 'assets/luxe cardy.png',
+      image: 'assets/luxe cardi.jpg',
     ),
     CartItem(
       id: '3',
       title: "Sunny Top",
       size: "L",
       price: 175900,
-      image: 'assets/sunny top.png',
+      image: 'assets/sunny top.jpg',
     ),
     CartItem(
       id: '4',

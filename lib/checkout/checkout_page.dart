@@ -441,9 +441,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
               child: Column(
                 children: [
-                  _buildProductItem("Luxe Cardy", "S", "Rp249.900", 'assets/luxe cardy.png'),
+                  _buildProductItem("Luxe Cardy", "S", "Rp249.900", 'assets/luxe cardi.jpg'),
                   const Divider(height: 1),
-                  _buildProductItem("Sunny Top", "L", "Rp175.900", 'assets/sunny top.png'),
+                  _buildProductItem("Sunny Top", "L", "Rp175.900", 'assets/sunny top.jpg'),
                   const Divider(height: 1),
                   _buildProductItem("Sweet Shirt", "M", "Rp247.000", 'assets/sweet shirt.png'),
                 ],

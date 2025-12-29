@@ -24,11 +24,11 @@ class _HomeScreenState extends State<HomeScreen> {
   
   // Produk images
   final List<String> _productImages = [
-    'assets/shirt1.png',
-    'assets/prod1.jpg',
-    'assets/prod2.jpg',
-    'assets/prod3.jpg',
-    'assets/prod4.jpg',
+    'assets/ribonia.png',
+    'assets/russ polo.png',
+    'assets/cardi abu.jpg',
+    'assets/madless.jpg',
+    'assets/cardi biru.jpg',
   ];
 
   int get _currentMoodIndex {
@@ -354,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 errorBuilder: (context, error, stackTrace) {
                   return const Icon(
                     Icons.checkroom,
-                    color: Colors.grey,
+                    color: Colors.black,
                     size: 40,
                   );
                 },
