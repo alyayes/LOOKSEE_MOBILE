@@ -29,13 +29,15 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
+  // Pastikan nama file di sini SAMA PERSIS dengan nama file di folder assets kamu
+  // Termasuk spasi dan huruf besar/kecilnya.
   final List<CartItem> _cartItems = [
     CartItem(
       id: '1',
       title: "Lily Top",
       size: "M",
       price: 295000,
-      image: 'assets/lily top.png',
+      image: 'assets/lily top.png', 
     ),
     CartItem(
       id: '2',
@@ -204,10 +206,28 @@ class _CartPageState extends State<CartPage> {
           ),
           const SizedBox(width: 12),
           
+          // --- BAGIAN INI YANG PENTING ---
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(item.image, width: 85, height: 85, fit: BoxFit.cover),
+            // Menggunakan Image.asset agar membaca file lokal
+            child: Image.asset(
+              item.image, 
+              width: 85, 
+              height: 85, 
+              fit: BoxFit.cover,
+              // Tambahkan errorBuilder untuk jaga-jaga kalau nama file salah
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 85, 
+                  height: 85, 
+                  color: Colors.grey[300], 
+                  child: const Icon(Icons.broken_image, color: Colors.grey)
+                );
+              },
+            ),
           ),
+          // -------------------------------
+
           const SizedBox(width: 15),
 
           Expanded(

@@ -71,6 +71,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
       paymentMethod: "COD",
       total: "Rp 175.000",
       items: [
+        // Pastikan nama file ini sesuai dengan yang ada di folder assets kamu (misal: assets/lily top.png atau assets/lily_top.png)
         OrderItem(title: "Lily Top", img: "assets/lily top.png", size: "M", price: "Rp 175.000"),
       ],
     ),
@@ -149,6 +150,29 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     );
   }
 
+  // --- FUNGSI HELPER UNTUK MENAMPILKAN GAMBAR (PENTING!) ---
+  Widget _buildImage(String imgPath, {double width = 70, double height = 70}) {
+    if (imgPath.startsWith('http')) {
+      // Jika link internet
+      return Image.network(
+        imgPath, 
+        width: width, 
+        height: height, 
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300], width: width, height: height, child: const Icon(Icons.broken_image)),
+      );
+    } else {
+      // Jika aset lokal
+      return Image.asset(
+        imgPath, 
+        width: width, 
+        height: height, 
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300], width: width, height: height, child: const Icon(Icons.broken_image)),
+      );
+    }
+  }
+
   // WIDGET CARD ORDER
   Widget _buildOrderCard(Order order) {
     // Ambil item pertama untuk preview
@@ -192,7 +216,8 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(firstItem.img, width: 70, height: 70, fit: BoxFit.cover),
+                // GUNAKAN FUNGSI HELPER DI SINI
+                child: _buildImage(firstItem.img, width: 70, height: 70),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -303,7 +328,8 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(item.img, width: 60, height: 60, fit: BoxFit.cover),
+                          // GUNAKAN FUNGSI HELPER JUGA DI SINI
+                          child: _buildImage(item.img, width: 60, height: 60),
                         ),
                         const SizedBox(width: 16),
                         Expanded(

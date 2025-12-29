@@ -43,13 +43,13 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      "Pendaftaran Berhasil!",
+                      "Registration Successful!",
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      "Akun Anda telah berhasil dibuat.\nSilahkan masuk untuk melanjutkan.",
+                      "Your account has been successfully created.\nPlease log in to continue.",
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
                     ),
@@ -73,7 +73,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text("MASUK", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        child: const Text("LOGIN", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       ),
                     ),
                   ],
@@ -164,7 +164,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           _passwordController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text("Harap isi semua kolom!"),
+                            content: Text("Please fill in all fields!"),
                             backgroundColor: Colors.red,
                           ),
                         );

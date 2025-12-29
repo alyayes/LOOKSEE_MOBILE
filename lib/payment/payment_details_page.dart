@@ -56,7 +56,7 @@ class _PaymentDetailsPageState extends State<PaymentDetailsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Payment Code Copied!"),
-          backgroundColor: Color(0xFFFF69B4), // Pink
+          backgroundColor: Color(0xFFFF69B4), // Pink Konsisten
           duration: Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
@@ -66,7 +66,8 @@ class _PaymentDetailsPageState extends State<PaymentDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryPink = Color(0xFFFF69B4);
+    // DEFINISI WARNA KONSISTEN
+    const Color primaryPink = Color(0xFFFF69B4); // HOT PINK UTAMA
     const Color lightPinkBg = Color(0xFFFFF0F5);
     const Color darkGrey = Color(0xFF5F6873);
 
@@ -260,14 +261,14 @@ class _PaymentDetailsPageState extends State<PaymentDetailsPage> {
         ),
         child: Row(
           children: [
-            // TOMBOL COPY (PINK - SESUAI GAMBAR)
+            // TOMBOL COPY (WARNA DIPERBAIKI)
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: _copyToClipboard,
                 icon: const Icon(Icons.copy, size: 18),
-                label: const Text("Copy Payment Code", style: TextStyle(fontSize: 13)), // Font agak kecil biar muat
+                label: const Text("Copy Payment Code", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)), // Tambah Bold biar tegas
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF9EBC), // Pink agak mudaan dikit sesuai gambar
+                  backgroundColor: primaryPink, // <--- SEKARANG PAKAI primaryPink (0xFFFF69B4)
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   elevation: 0,
@@ -277,7 +278,7 @@ class _PaymentDetailsPageState extends State<PaymentDetailsPage> {
             ),
             const SizedBox(width: 12),
             
-            // TOMBOL BACK (ABU TUA - SESUAI GAMBAR)
+            // TOMBOL BACK (ABU TUA)
             Expanded(
               child: ElevatedButton(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyOrdersPage())),
@@ -288,7 +289,7 @@ class _PaymentDetailsPageState extends State<PaymentDetailsPage> {
                   elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text("Back to My Orders", style: TextStyle(fontSize: 13)),
+                child: const Text("Back to My Orders", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
               ),
             ),
           ],

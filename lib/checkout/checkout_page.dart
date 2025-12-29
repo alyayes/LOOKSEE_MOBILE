@@ -34,7 +34,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final List<String> _ewallets = ["GoPay", "ShopeePay", "OVO"];
 
   // STATE ADDRESS (Data Dummy)
-  List<Address> _addresses = [
+  final List<Address> _addresses = [
     Address(
       id: '1',
       name: "Lucy Maudy",
@@ -72,16 +72,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 
-                // === BAGIAN INI DIGANTI JADI GIF ===
+                // === GAMBAR GIF SUKSES ===
                 SizedBox(
-                  height: 120, // Ukuran disesuaikan agar pas
+                  height: 120,
                   width: 120,
                   child: Image.asset(
                     'assets/sukses regis.gif', 
                     fit: BoxFit.contain,
+                    // Error builder jaga-jaga kalau gif gak ketemu
+                    errorBuilder: (context, error, stackTrace) => 
+                      const Icon(Icons.check_circle, size: 80, color: Colors.green),
                   ),
                 ),
-                // ===================================
+                // =========================
 
                 const SizedBox(height: 10),
                 
@@ -441,6 +444,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
               child: Column(
                 children: [
+                  // --- PASTIKAN NAMA FILE SAMA DENGAN DI ASSETS ---
+                  // Jika kamu sudah rename jadi pakai underscore (_), ganti nama di sini ya!
+                  // Contoh: 'assets/luxe_cardi.jpg'
                   _buildProductItem("Luxe Cardy", "S", "Rp249.900", 'assets/luxe cardi.jpg'),
                   const Divider(height: 1),
                   _buildProductItem("Sunny Top", "L", "Rp175.900", 'assets/sunny top.jpg'),
@@ -575,7 +581,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(imgUrl, width: 70, height: 70, fit: BoxFit.cover)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            // DIGANTI JADI ASSET + ERROR BUILDER
+            child: Image.asset(
+              imgUrl, 
+              width: 70, 
+              height: 70, 
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 70, 
+                  height: 70, 
+                  color: Colors.grey[200], 
+                  child: const Icon(Icons.broken_image, size: 30, color: Colors.grey)
+                );
+              },
+            ),
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
