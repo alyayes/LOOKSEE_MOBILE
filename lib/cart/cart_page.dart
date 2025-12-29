@@ -120,7 +120,7 @@ class _CartPageState extends State<CartPage> {
           
           Expanded(
             child: _cartItems.isEmpty 
-              ? const Center(child: Text("Keranjang kosong"))
+              ? const Center(child: Text("Cart is empty"))
               : ListView.separated(
                   padding: const EdgeInsets.all(20),
                   itemCount: _cartItems.length,
