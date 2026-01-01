@@ -14,16 +14,30 @@ class ProductPage extends StatefulWidget {
 class _ProductPageState extends State<ProductPage> {
   List<dynamic> _products = [];
   bool _isLoading = true;
+  String _selectedCategory = 'Semua'; 
+  String? _currentMood; 
 
   @override
-  void initState() {
-    super.initState();
-    _fetchProducts();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String && _currentMood != args) {
+      _currentMood = args;
+      _fetchProducts(); 
+    }
   }
 
   void _fetchProducts() async {
+    setState(() => _isLoading = true);
     try {
-      final data = await ApiService().getProducts();
+      // Kirim parameter category sesuai pilihan (Man/Woman/null)
+      String? categoryParam = (_selectedCategory == 'Semua') ? null : _selectedCategory;
+      
+      final data = await ApiService().getProducts(
+        mood: _currentMood, 
+        category: categoryParam
+      );
+
       if (mounted) {
         setState(() {
           _products = data;
@@ -32,62 +46,109 @@ class _ProductPageState extends State<ProductPage> {
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
-      print("Error fetching products: $e");
+      print("Error: $e");
     }
   }
 
+  void _showFilterModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Filter Category", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Divider(),
+                  // PAKAI TEKS YANG SESUAI DATABASE (Man & Woman)
+                  _buildFilterOption("Semua", setModalState),
+                  _buildFilterOption("Woman", setModalState), 
+                  _buildFilterOption("Man", setModalState),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterOption(String title, StateSetter setModalState) {
+    bool isSelected = _selectedCategory == title;
+    return RadioListTile<String>(
+      title: Text(title, style: TextStyle(color: isSelected ? Colors.pink : Colors.black)),
+      value: title,
+      groupValue: _selectedCategory,
+      activeColor: Colors.pink,
+      onChanged: (value) {
+        if (value != null) {
+          setModalState(() => _selectedCategory = value);
+          setState(() => _selectedCategory = value);
+          _fetchProducts(); // Langsung panggil API
+          Navigator.pop(context); // Tutup Modal
+        }
+      },
+    );
+  }
+
   String formatRupiah(dynamic price) {
-    double value = 0;
-    if (price != null) {
-      value = double.tryParse(price.toString()) ?? 0;
-    }
+    double value = double.tryParse(price.toString()) ?? 0;
     return NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0).format(value);
   }
 
   @override
   Widget build(BuildContext context) {
+    const pinkColor = Color(0xFFFF69B4);
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
             // Header
-            Container(
+            Padding(
               padding: const EdgeInsets.all(16),
-              color: Colors.white,
               child: Row(
                 children: [
-                  IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black87), onPressed: () => Navigator.pop(context)),
+                  IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
                   const Spacer(),
-                  IconButton(icon: const Icon(Icons.favorite_border, color: Colors.black87), onPressed: () => Navigator.pushNamed(context, '/favorite')),
-                  IconButton(icon: const Icon(Icons.notifications_outlined, color: Colors.black87), onPressed: () {}),
+                  IconButton(icon: const Icon(Icons.tune, color: pinkColor), onPressed: _showFilterModal),
+                  IconButton(icon: const Icon(Icons.favorite_border), onPressed: () => Navigator.pushNamed(context, '/favorite')),
                 ],
               ),
             ),
-            // Title
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: const Text('Your Mood Is Happy!', textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.pink)),
+            
+            Text(
+              "Your Mood Is ${_currentMood ?? 'Neutral'}!",
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: pinkColor),
             ),
-            // Grid
+
+            if (_selectedCategory != 'Semua')
+              Chip(
+                label: Text("Category: $_selectedCategory"),
+                onDeleted: () {
+                  setState(() => _selectedCategory = 'Semua');
+                  _fetchProducts();
+                },
+              ),
+
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Colors.pink))
+                  ? const Center(child: CircularProgressIndicator(color: pinkColor))
                   : _products.isEmpty
-                      ? const Center(child: Text("Belum ada produk."))
-                      : SingleChildScrollView(
+                      ? const Center(child: Text("No products found for this mood & category."))
+                      : GridView.builder(
                           padding: const EdgeInsets.all(16),
-                          child: GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.70,
-                            ),
-                            itemCount: _products.length,
-                            itemBuilder: (context, index) => _buildProductItem(_products[index]),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.7,
                           ),
+                          itemCount: _products.length,
+                          itemBuilder: (context, index) => _buildProductItem(_products[index]),
                         ),
             ),
           ],
@@ -98,54 +159,39 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   Widget _buildProductItem(dynamic product) {
-    String name = product['nama_produk'] ?? 'No Name';
-    var priceRaw = product['harga'];
-    
-    // 🔥 AMBIL NAMA FILE DARI DB
+    // Logic pencegahan error 404 gambar
     String fileName = product['gambar_produk'] ?? '';
-    // 🔥 PATH LOKAL
-    String assetPath = 'assets/produk-looksee/$fileName';
+    String assetPath = fileName.contains('assets/') ? fileName : 'assets/produk-looksee/$fileName';
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => DetailProductPage(productData: product)));
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!, width: 1),
-          boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))],
-        ),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => DetailProductPage(productData: product))),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Container(
-                width: double.infinity,
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    assetPath, // 👈 Panggil Assets Lokal
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
-                  ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                child: Image.asset(
+                  assetPath,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image)),
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
-                  const SizedBox(height: 4),
-                  Text(formatRupiah(priceRaw), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.pink)),
+                  Text(product['nama_produk'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1),
+                  Text(formatRupiah(product['harga']), style: const TextStyle(color: Colors.pink, fontSize: 12)),
                 ],
               ),
-            ),
+            )
           ],
         ),
       ),
