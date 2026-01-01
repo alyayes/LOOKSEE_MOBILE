@@ -12,14 +12,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Data Real
+  // Data Real dari API
   List<dynamic> _latestProducts = [];
   List<dynamic> _womanProducts = [];
   List<dynamic> _manProducts = [];
+  String _userName = "User"; 
   bool _isLoading = true;
 
-  // Data Dummy Mood (Client Side)
-  double _moodValue = 0.75;
+  // --- BAGIAN MOOD: Perbaikan Posisi Tengah Tanpa Titik ---
+  double _moodValue = 0.5; // 🔥 Default tepat di tengah (0.5)
   bool _isFavorite = false; 
   
   final List<String> _moodImages = [
@@ -29,7 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
     'assets/gif/senang.gif',
     'assets/gif/sangatSenang.gif'
   ];
-  final List<String> _moodLabels = ['Very Sad', 'Sad', 'Neutral', 'Happy', 'Very Happy!'];
+  
+  final List<String> _moodLabels = ['Very Sad', 'Sad', 'Neutral', 'Happy', 'Very Happy'];
 
   int get _currentMoodIndex {
     int index = (_moodValue * (_moodImages.length - 1)).round();
@@ -44,24 +46,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _fetchData() async {
     try {
+      final profileData = await ApiService().getProfile();
       final allProducts = await ApiService().getProducts();
       
       if (mounted) {
         setState(() {
-          // 1. Latest (Ambil 5 teratas setelah dibalik)
-          _latestProducts = List.from(allProducts.reversed).take(5).toList();
+          if (profileData != null && profileData['user'] != null) {
+            _userName = profileData['user']['name'] ?? "User";
+          }
 
-          // 2. Woman (Filter Kategori)
-          _womanProducts = allProducts.where((p) => p['kategori'] == 'Woman').toList();
+          final reversedProducts = List.from(allProducts.reversed);
 
-          // 3. Man (Filter Kategori)
-          _manProducts = allProducts.where((p) => p['kategori'] == 'Man').toList();
+          _latestProducts = reversedProducts.take(5).toList();
+          _womanProducts = reversedProducts.where((p) => p['kategori'] == 'Woman').take(5).toList();
+          _manProducts = reversedProducts.where((p) => p['kategori'] == 'Man').take(5).toList();
 
           _isLoading = false;
         });
       }
     } catch (e) {
-      print("Error fetching home data: $e");
+      debugPrint("Error fetching data: $e");
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -105,13 +109,12 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 10),
-                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Hi, Afa", 
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                    Text(
+                      "Hi, $_userName!", 
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     Row(
                       children: [
@@ -132,7 +135,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 15),
-                // Search Bar
                 Container(
                   height: 45,
                   decoration: BoxDecoration(
@@ -143,14 +145,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: const TextField(
                     decoration: InputDecoration(
                       prefixIcon: Icon(Icons.search, color: Color(0xFFFF69B4)),
-                      hintText: "Search...",
+                      hintText: "Search products...",
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 10),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Banner
                 Container(
                   width: double.infinity,
                   height: 160,
@@ -165,25 +166,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 25),
-                
                 _buildSectionTitle("Latest Product"),
                 const SizedBox(height: 10),
-                _buildHorizontalProductList(_latestProducts), // <-- Kirim Data Real
-                
+                _buildHorizontalProductList(_latestProducts), 
                 const SizedBox(height: 20),
                 _buildMoodSection(),
-                
                 const SizedBox(height: 25),
                 _buildSectionTitle("Woman"),
                 const SizedBox(height: 10),
-                _buildHorizontalProductList(_womanProducts), // <-- Kirim Data Real
-                
+                _buildHorizontalProductList(_womanProducts), 
                 const SizedBox(height: 25),
                 _buildSectionTitle("Man"),
                 const SizedBox(height: 10),
-                _buildHorizontalProductList(_manProducts), // <-- Kirim Data Real
-                
-                const SizedBox(height: 120),
+                _buildHorizontalProductList(_manProducts), 
+                const SizedBox(height: 20), // 🔥 JARAK DIPERBAIKI: Tidak lagi 120 agar tidak ada gap besar
               ],
             ),
           ),
@@ -203,7 +199,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         children: [
-          const Text("Choose your mood!", style: TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text(
+            "Let's Find an Outfit That Suits With Your Mood!", 
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold, fontSize: 16)
+          ),
           const SizedBox(height: 15),
           SizedBox(height: 80, width: 80, child: Image.asset(_moodImages[_currentMoodIndex], fit: BoxFit.contain, key: ValueKey<int>(_currentMoodIndex))),
           const SizedBox(height: 10),
@@ -217,8 +217,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         activeTrackColor: const Color(0xFFFF69B4).withOpacity(0.3),
                         thumbColor: const Color(0xFFFF69B4),
                         overlayColor: const Color(0xFFFF69B4).withOpacity(0.1),
+                        tickMarkShape: SliderTickMarkShape.noTickMark, 
                       ),
-                      child: Slider(value: _moodValue, onChanged: (val) => setState(() => _moodValue = val)),
+                      child: Slider(
+                        value: _moodValue, 
+                        min: 0,
+                        max: 1.0,
+                        divisions: null,
+                        onChanged: (val) => setState(() => _moodValue = val),
+                      ),
                     ),
                     Text(_moodLabels[_currentMoodIndex], style: const TextStyle(color: Color(0xFFFF69B4), fontSize: 12, fontWeight: FontWeight.w500)),
                   ],
@@ -244,7 +251,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54));
   }
 
-  // WIDGET LIST PRODUK REAL
   Widget _buildHorizontalProductList(List<dynamic> products) {
     if (products.isEmpty) {
       return const SizedBox(height: 50, child: Center(child: Text("No items found.", style: TextStyle(color: Colors.grey))));
@@ -259,11 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final product = products[index];
           String name = product['nama_produk'] ?? 'No Name';
           String price = formatRupiah(product['harga']);
-          
-          // 🔥 AMBIL NAMA FILE DARI DB (Contoh: 1766543079.jpg)
           String fileName = product['gambar_produk'] ?? '';
-          
-          // 🔥 SAMBUNGKAN DENGAN FOLDER LOKAL
           String assetPath = 'assets/produk-looksee/$fileName';
 
           return GestureDetector(
@@ -288,10 +290,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: double.infinity,
                         color: Colors.grey[50],
                         child: Image.asset(
-                          assetPath, // 👈 Panggil Path Lokal
+                          assetPath,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            // Kalau file ga ada di folder assets, muncul icon pecah
                             return const Icon(Icons.broken_image, color: Colors.grey); 
                           },
                         ),

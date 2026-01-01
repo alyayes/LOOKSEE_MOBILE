@@ -100,8 +100,15 @@ class ApiService {
   // ===============================================================
 
   Future<dynamic> getProfile() async {
-    final response = await http.get(Uri.parse('$baseUrl/profile'), headers: _getHeaders());
-    if (response.statusCode == 200) return json.decode(response.body);
+    // 🔥 UBAH: Ganti /profile menjadi /user agar sesuai dengan AuthController@user di Laravel
+    final response = await http.get(Uri.parse('$baseUrl/user'), headers: _getHeaders());
+    
+    // Tambahkan print ini untuk memastikan data yang datang adalah "garden"
+    print("DEBUG RESPONSE PROFILE: ${response.body}"); 
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
     return null;
   }
 
