@@ -38,6 +38,7 @@ dependencies:
   lottie: ^3.1.0
 
   http: ^1.2.0
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +72,7 @@ flutter:
     - assets/      
     - assets/gif/
     - assets/styleJournal/
+    - assets/produk-looksee/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

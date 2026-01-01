@@ -51,29 +51,25 @@ class ApiService {
     }
   }
 
+  // Di dalam class ApiService di api_service.dart
+
   Future<bool> login(String username, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/login'),
-        headers: _getHeaders(),
-        body: jsonEncode({ // Pakai jsonEncode biar aman
-          'username': username,
-          'password': password,
-        }),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': username, 'password': password}),
       );
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-        // SIMPAN TOKEN (Penting! Supaya fitur lain bisa jalan)
-        _token = data['token']; // Sesuaikan dengan response JSON Laravel kamu
-        print("Login Sukses. Token: $_token");
+        // 🔥 PASTIKAN INI TERISI:
+        _token = data['token']; 
+        print("Token tersimpan: $_token");
         return true;
-      } else {
-        print("Login Gagal: ${response.body}");
-        return false;
       }
+      return false;
     } catch (e) {
-      print("Error Login: $e");
       return false;
     }
   }
@@ -130,20 +126,27 @@ class ApiService {
   Future<List<dynamic>> getProducts() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/produk'), headers: _getHeaders());
+      
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-        return data['data'] ?? data; 
+        
+        // LOGIC BARU: Cek tipe datanya
+        // Kalau Controller kirim langsung List [], terima langsung
+        if (data is List) {
+          return data; 
+        }
+        // Kalau Controller kirim {'data': []}, ambil dalamnya
+        else if (data is Map && data.containsKey('data')) {
+          return data['data'];
+        }
+        
+        return [];
       }
       return [];
     } catch (e) {
+      print("Error Get Products: $e");
       return [];
     }
-  }
-
-  Future<dynamic> getProductDetail(String id) async {
-    final response = await http.get(Uri.parse('$baseUrl/produk/$id'), headers: _getHeaders());
-    if (response.statusCode == 200) return json.decode(response.body);
-    return null;
   }
 
   // ===============================================================
@@ -179,100 +182,162 @@ class ApiService {
     final response = await http.delete(Uri.parse('$baseUrl/profile/post/$id'), headers: _getHeaders());
     return response.statusCode == 200;
   }
-
   // ===============================================================
-  // 5. CART (KERANJANG)
+  // 5. CART (KERANJANG) - Sinkron dengan ApiCartController.php
   // ===============================================================
 
+    // 2. ADD CART
+  Future<bool> addToCart(String productId, int qty) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/cart/add'),
+        headers: _getHeaders(),
+        body: jsonEncode({
+          'product_id': productId,
+          'quantity': qty,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Ambil isi keranjang
   Future<List<dynamic>> getCartItems() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/cart'), headers: _getHeaders());
+      
       if (response.statusCode == 200) {
-        var data = json.decode(response.body);
-        return data['data'] ?? data;
+        var jsonResponse = json.decode(response.body);
+        // Sesuaikan dengan ApiCartController: { "status": "success", "data": { "items": [...] } }
+        if (jsonResponse['data'] != null && jsonResponse['data']['items'] != null) {
+          return jsonResponse['data']['items'];
+        }
       }
       return [];
     } catch (e) {
-      print("Error Cart: $e");
+      print("Error Get Cart: $e");
       return [];
     }
   }
 
-  Future<bool> addToCart(String productId, int qty, String size) async {
+  // Update Quantity (Tambah/Kurang)
+  Future<bool> updateCartQty(String productId, int newQty) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/cart/update'),
+        headers: _getHeaders(),
+        body: jsonEncode({
+          'product_id': productId, // Sesuai $request->input('product_id') di Controller
+          'quantity': newQty,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Hapus Item
+  Future<bool> deleteCartItem(String productId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/cart/delete'),
+        headers: _getHeaders(),
+        body: jsonEncode({
+          'product_id': productId,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+ // ===============================================================
+  // 6. CHECKOUT & ADDRESS
+  // ===============================================================
+
+  // 1. TAMBAHKAN FUNGSI INI DI DALAM CLASS ApiService
+  Future<Map<String, dynamic>?> getCheckoutSummary(String productIds) async {
+    try {
+      // Endpoint ini sesuai dengan getCheckoutData di ApiCheckoutController.php
+      final response = await http.get(
+        Uri.parse('$baseUrl/checkout/summary?selected_products=$productIds'),
+        headers: _getHeaders(),
+      );
+
+      print("Response Summary: ${response.body}");
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print("Error getCheckoutSummary: $e");
+      return null;
+    }
+  }
+
+  // Ambil Daftar Alamat User
+  Future<List<dynamic>> getUserAddresses() async {
+    final response = await http.get(Uri.parse('$baseUrl/profile'), headers: _getHeaders());
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body);
+      return data['data']['addresses'] ?? []; // Sesuaikan struktur response Profile kamu
+    }
+    return [];
+  }
+
+  // Proses Simpan Order ke Database (PASTIKAN NAMA PARAMETER SAMA)
+  Future<Map<String, dynamic>?> processCheckout({
+    required String selectedProducts,
+    required String address_id,      // Gunakan underscore
+    required String payment_method,  // Gunakan underscore
+    String? bank_id,                 // Gunakan underscore
+    String? ewallet_id,              // Gunakan underscore
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/checkout/process'),
+        headers: _getHeaders(),
+        body: jsonEncode({
+          'selected_products': selectedProducts,
+          'address_id': address_id,
+          'payment_method': payment_method,
+          'bank_id': bank_id,
+          'ewallet_id': ewallet_id,
+        }),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // --- MANAJEMEN ALAMAT ---
+  Future<bool> addAddress(Map<String, dynamic> data) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/cart/add'),
+      Uri.parse('$baseUrl/checkout/add-address'),
       headers: _getHeaders(),
-      body: jsonEncode({
-        'product_id': productId,
-        'quantity': qty,
-        'size': size,
-      }),
+      body: jsonEncode(data),
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }
 
-  Future<bool> updateCartQty(String cartId, int qty) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/cart/update'),
+  Future<bool> deleteAddress(String id) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/checkout/delete-address/$id'),
       headers: _getHeaders(),
-      body: jsonEncode({
-        'cart_id': cartId,
-        'quantity': qty,
-      }),
     );
     return response.statusCode == 200;
   }
 
-  Future<bool> deleteCartItem(String cartId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/cart/delete'),
-      headers: _getHeaders(),
-      body: jsonEncode({'cart_id': cartId}),
-    );
-    return response.statusCode == 200;
-  }
-
-  // ===============================================================
-  // 6. CHECKOUT & ORDERS
-  // ===============================================================
-
-  Future<dynamic> getCheckoutSummary() async {
-    final response = await http.get(Uri.parse('$baseUrl/checkout/summary'), headers: _getHeaders());
-    if (response.statusCode == 200) return json.decode(response.body);
-    return null;
-  }
-
-  Future<bool> processCheckout(String address, String paymentMethod) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/checkout/process'),
-      headers: _getHeaders(),
-      body: jsonEncode({
-        'address': address,
-        'payment_method': paymentMethod,
-      }),
-    );
-    return response.statusCode == 200;
-  }
-
-  Future<List<dynamic>> getOrders() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/orders'), headers: _getHeaders());
-      if (response.statusCode == 200) {
-        var data = json.decode(response.body);
-        return data['data'] ?? data;
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  Future<dynamic> getOrderDetail(String id) async {
-    final response = await http.get(Uri.parse('$baseUrl/orders/$id'), headers: _getHeaders());
-    if (response.statusCode == 200) return json.decode(response.body);
-    return null;
-  }
-
+  
   // ===============================================================
   // 7. PAYMENT
   // ===============================================================
