@@ -280,7 +280,13 @@ class _CartPageState extends State<CartPage> {
           ElevatedButton(
             onPressed: _totalPrice > 0 
                 ? () {
-                    List<CartItemModel> selected = _cartItems.where((i) => i.isSelected).toList();
+                    // KODE BARU (Benar):
+                    List<Map<String, dynamic>> selected = _cartItems
+                        .where((i) => i.isSelected)
+                        .map((item) => {
+                              'product_id': item.productId, // Pastikan key ini sama dengan yang diminta CheckoutPage
+                            })
+                        .toList();
                     Navigator.push(context, MaterialPageRoute(builder: (_) => CheckoutPage(selectedItems: selected)));
                   }
                 : null,

@@ -7,7 +7,6 @@ import 'product/product.dart';
 import 'favorite/favorite.dart';
 import 'landing/landing_page.dart';
 import 'cart/cart_page.dart';
-import 'checkout/checkout_page.dart';
 import 'orders/my_orders_page.dart';
 import 'payment/payment_details_page.dart';
 import './todaysOutfit/todays_outfit.dart';
@@ -39,7 +38,10 @@ class MyApp extends StatelessWidget {
         '/favorite': (context) => const FavoritePage(),
         '/cart': (context) => const CartPage(),
         '/my-orders': (context) => const MyOrdersPage(),
-        '/payment-details': (context) => const PaymentDetailsPage(),
+        '/payment-details': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return PaymentDetailsPage(orderData: args);
+        },
         '/todaysoutfit': (context) => const TodaysOutfitApp(),
 
       },

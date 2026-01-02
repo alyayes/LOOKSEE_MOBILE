@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Wajib import ini untuk fitur Copy
-import 'dart:async'; // Untuk Timer
-import '../orders/my_orders_page.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
 
 class PaymentDetailsPage extends StatefulWidget {
-  const PaymentDetailsPage({super.key});
+  final Map<String, dynamic> orderData; // Tambahkan parameter untuk menerima data order
+  const PaymentDetailsPage({super.key, required this.orderData});
 
   @override
   State<PaymentDetailsPage> createState() => _PaymentDetailsPageState();
 }
 
 class _PaymentDetailsPageState extends State<PaymentDetailsPage> {
-  // TIMER LOGIC
   late Timer _timer;
   Duration _timeLeft = const Duration(hours: 23, minutes: 59, seconds: 59);
-  
-  // KODE PEMBAYARAN (Simpan di variabel biar mudah dicopy)
-  final String _paymentCode = "TRX-684ee79793a4f";
 
   @override
   void initState() {
@@ -27,9 +23,7 @@ class _PaymentDetailsPageState extends State<PaymentDetailsPage> {
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_timeLeft.inSeconds > 0) {
-        setState(() {
-          _timeLeft = _timeLeft - const Duration(seconds: 1);
-        });
+        if (mounted) setState(() => _timeLeft -= const Duration(seconds: 1));
       } else {
         _timer.cancel();
       }
@@ -44,294 +38,113 @@ class _PaymentDetailsPageState extends State<PaymentDetailsPage> {
 
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String hours = twoDigits(duration.inHours);
-    String minutes = twoDigits(duration.inMinutes.remainder(60));
-    String seconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$hours:$minutes:$seconds";
+    return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
   }
 
-  // --- FUNGSI COPY CLIPBOARD ---
-  void _copyToClipboard() {
-    Clipboard.setData(ClipboardData(text: _paymentCode)).then((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Payment Code Copied!"),
-          backgroundColor: Color(0xFFFF69B4), // Pink Konsisten
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+  void _copyToClipboard(String code) {
+    Clipboard.setData(ClipboardData(text: code)).then((_) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Payment Code Copied!"), backgroundColor: Color(0xFFFF69B4)));
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // DEFINISI WARNA KONSISTEN
-    const Color primaryPink = Color(0xFFFF69B4); // HOT PINK UTAMA
-    const Color lightPinkBg = Color(0xFFFFF0F5);
-    const Color darkGrey = Color(0xFF5F6873);
+    const pink = Color(0xFFFF69B4);
+    // Ambil data payment dari map orderData
+    final payment = widget.orderData['payment'] ?? {};
+    final String trxCode = payment['transaction_code'] ?? "N/A";
+    final String method = widget.orderData['payment_method'] ?? "Transfer";
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
-      appBar: AppBar(
-        title: const Text("Payment Details", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        leading: const BackButton(color: Colors.black),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Payment Details", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)), centerTitle: true, elevation: 0, backgroundColor: Colors.white),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // === 1. COUNTDOWN TIMER ===
             Container(
               margin: const EdgeInsets.only(bottom: 20),
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFE0B2), 
-                borderRadius: BorderRadius.circular(30),
-              ),
+              decoration: BoxDecoration(color: const Color(0xFFFFE0B2), borderRadius: BorderRadius.circular(30)),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.timer_outlined, color: Colors.deepOrange, size: 20),
                   const SizedBox(width: 8),
-                  Text(
-                    "Complete payment in ${_formatDuration(_timeLeft)}",
-                    style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold),
-                  ),
+                  Text("Complete payment in ${_formatDuration(_timeLeft)}", style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
-
-            // === 2. CARD ORDER INFO ===
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))
-                ],
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
               child: Column(
                 children: [
-                  // Status
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Status", style: TextStyle(color: Colors.grey)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: lightPinkBg,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: primaryPink.withOpacity(0.3)),
-                        ),
-                        child: const Text("Waiting for Payment", style: TextStyle(color: primaryPink, fontWeight: FontWeight.bold, fontSize: 12)),
-                      ),
-                    ],
-                  ),
+                  _row("Status", "Waiting for Payment", isPink: true),
+                  const Divider(height: 30),
+                  _row("Order ID", "#${widget.orderData['order_id']}"),
+                  const SizedBox(height: 12),
+                  _row("Payment Method", method),
                   const SizedBox(height: 20),
-                  
-                  _row("Order ID", "#52"),
-                  const SizedBox(height: 12),
-                  
-                  // Payment Method
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Payment Method", style: TextStyle(color: Colors.grey)),
-                      Row(
-                        children: const [
-                          Icon(Icons.account_balance_wallet, color: primaryPink, size: 16),
-                          SizedBox(width: 6),
-                          Text("E-Wallet (Dana)", style: TextStyle(fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  // Payment Code Box (Bisa dicopy juga kalau diklik)
-                  GestureDetector(
-                    onTap: _copyToClipboard,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F6F8),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text("Payment Code", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          Row(
-                            children: [
-                              Text(_paymentCode, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: 0.5)),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.copy, size: 16, color: Colors.grey),
-                            ],
-                          ),
-                        ],
-                      ),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Payment Code", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        Row(children: [
+                          Text(trxCode, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          IconButton(onPressed: () => _copyToClipboard(trxCode), icon: const Icon(Icons.copy, size: 18, color: pink))
+                        ])
+                      ],
                     ),
                   ),
-
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Divider(thickness: 1, color: Color(0xFFEEEEEE)),
-                  ),
-                  
-                  _row("Total Amount Due", "Rp 347.000", isPink: true),
+                  const Divider(height: 30),
+                  _row("Total Amount", "Rp ${widget.orderData['grand_total']}", isBold: true, fontSize: 18),
                 ],
               ),
             ),
-            
             const SizedBox(height: 24),
-
-            // === 3. INSTRUCTION ===
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
-              ),
-              child: Theme(
-                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                child: ExpansionTile(
-                  initiallyExpanded: true,
-                  tilePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  childrenPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  iconColor: primaryPink,
-                  collapsedIconColor: Colors.grey,
-                  title: Row(
-                    children: [
-                      Container(
-                        width: 30, height: 30,
-                        decoration: BoxDecoration(color: Colors.blue[50], shape: BoxShape.circle),
-                        child: const Icon(Icons.wallet, color: Colors.blue, size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text("How to Pay via Dana", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    ],
-                  ),
-                  children: [
-                    const Divider(),
-                    const SizedBox(height: 10),
-                    _stepCircle("1", "Open your Dana application."),
-                    _stepCircle("2", "Select 'Send' or 'Transfer' menu."),
-                    _stepCircle("3", "Enter destination number: 081122334455\n(Name: LOOKSEE.DANA)"),
-                    _stepCircle("4", "Enter payment amount: Rp 347.000."),
-                    _stepCircle("5", "Complete the payment."),
-                    const SizedBox(height: 15),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: lightPinkBg, borderRadius: BorderRadius.circular(10)),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.info_outline, color: primaryPink, size: 20),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              "Order will be verified automatically after payment.",
-                              style: TextStyle(fontSize: 12, color: darkGrey),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ),
+            _buildInstructions(method),
           ],
         ),
       ),
-      
-      // === 4. BOTTOM BUTTONS ===
-      bottomNavigationBar: Container(
+      bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+        child: ElevatedButton(
+          onPressed: () => Navigator.pop(context),
+          style: ElevatedButton.styleFrom(backgroundColor: pink, padding: const EdgeInsets.symmetric(vertical: 15), shape: const StadiumBorder()),
+          child: const Text("Back to My Orders", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
-        child: Row(
+      ),
+    );
+  }
+
+  Widget _buildInstructions(String method) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // TOMBOL COPY (WARNA DIPERBAIKI)
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _copyToClipboard,
-                icon: const Icon(Icons.copy, size: 18),
-                label: const Text("Copy Payment Code", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)), // Tambah Bold biar tegas
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryPink, // <--- SEKARANG PAKAI primaryPink (0xFFFF69B4)
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            
-            // TOMBOL BACK (ABU TUA)
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyOrdersPage())),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: darkGrey,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text("Back to My Orders", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-              ),
-            ),
+            Text("How to pay via $method", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Divider(height: 20),
+            const Text("1. Open your payment app\n2. Choose Transfer or Pay menu\n3. Enter the payment code provided above\n4. Ensure the amount matches exactly\n5. Confirm and complete your transaction"),
           ],
         ),
       ),
     );
   }
 
-  Widget _row(String label, String val, {bool isPink = false}) {
+  Widget _row(String label, String val, {bool isPink = false, bool isBold = false, double fontSize = 14}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-        Text(
-          val,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: isPink ? 18 : 14,
-            color: isPink ? const Color(0xFFFF69B4) : Colors.black87,
-          ),
-        ),
+        Text(label, style: const TextStyle(color: Colors.grey)),
+        Text(val, style: TextStyle(fontWeight: isBold || isPink ? FontWeight.bold : FontWeight.normal, fontSize: fontSize, color: isPink ? const Color(0xFFFF69B4) : Colors.black)),
       ],
-    );
-  }
-
-  Widget _stepCircle(String number, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 20, height: 20,
-            decoration: const BoxDecoration(color: Color(0xFFFF69B4), shape: BoxShape.circle),
-            child: Center(
-              child: Text(number, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 13, height: 1.4, color: Colors.black87))),
-        ],
-      ),
     );
   }
 }
