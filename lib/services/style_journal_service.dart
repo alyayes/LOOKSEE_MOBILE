@@ -6,20 +6,28 @@ class StyleJournalService {
   static const String baseUrl = 'http://10.0.2.2:8000/api';
 
   Future<List<StyleJournal>> fetchJournals() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/stylejournals'),
-    );
+    final response = await http.get(Uri.parse('$baseUrl/stylejournals'));
 
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body);
+      final List data = decoded['data'];
 
-      List data = decoded['data'];
-
-      return data
-          .map((item) => StyleJournal.fromJson(item))
-          .toList();
+      return data.map((e) => StyleJournal.fromJson(e)).toList();
     } else {
       throw Exception('Gagal load style journal');
     }
   }
+
+  Future<StyleJournal> fetchJournalById(int id) async {
+  final response =
+      await http.get(Uri.parse('$baseUrl/stylejournals/$id'));
+
+  if (response.statusCode == 200) {
+    final decoded = json.decode(response.body);
+    return StyleJournal.fromJson(decoded);
+  } else {
+    throw Exception('Gagal load detail');
+  }
+}
+
 }

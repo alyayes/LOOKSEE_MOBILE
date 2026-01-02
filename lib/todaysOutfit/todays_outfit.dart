@@ -3,47 +3,20 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../navbar/navbar.dart';
 
-
 // ================= API SERVICE =================
 class ApiService {
   static const String baseUrl = "http://10.0.2.2:8000/api";
 
   Future<List<dynamic>> fetchPosts(String endpoint) async {
-    final cleanEndpoint =
-        endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
-
-    final url = Uri.parse('$baseUrl/$cleanEndpoint');
-    final response =
-        await http.get(url).timeout(const Duration(seconds: 15));
+    final url = Uri.parse('$baseUrl/$endpoint');
+    final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> decoded = json.decode(response.body);
+      final decoded = json.decode(response.body);
       return decoded['data'] ?? [];
     } else {
       throw Exception("Gagal memuat data");
     }
-  }
-}
-
-// ================= MAIN =================
-void main() {
-  runApp(const TodaysOutfitApp());
-}
-
-class TodaysOutfitApp extends StatelessWidget {
-  const TodaysOutfitApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Todays Outfit',
-      theme: ThemeData(
-        primarySwatch: Colors.pink,
-        scaffoldBackgroundColor: Colors.white,
-      ),
-      home: const TodaysOutfitScreen(),
-    );
   }
 }
 
@@ -66,12 +39,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
     _tabController = TabController(length: 3, vsync: this);
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
   // ================= MOOD TAG =================
   Widget _buildMoodTag(String mood) {
     Color color = const Color(0xFFF7A2B4);
@@ -86,36 +53,32 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
       ),
       child: Text(
         mood,
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 10, color: Colors.white),
       ),
     );
   }
 
-  // ================= CARD ITEM =================
-  Widget _buildOutfitItem(Map<String, dynamic> item) {
+  // ================= CARD (AUTO HEIGHT) =================
+  Widget _buildOutfitCard(Map<String, dynamic> item) {
     final imageUrl =
         "http://10.0.2.2:8000/storage/posts/${item['image_post']}";
 
     return Card(
+      margin: const EdgeInsets.only(bottom: 16),
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
             // IMAGE
-            AspectRatio(
-              aspectRatio: 3 / 4,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: AspectRatio(
+                aspectRatio: 3 / 4,
                 child: Image.network(
                   imageUrl,
                   fit: BoxFit.cover,
@@ -127,12 +90,12 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
-            // TITLE
+            // CAPTION
             Text(
-              item['caption'] ?? 'No Title',
-              maxLines: 1,
+              item['caption'] ?? '-',
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 14,
@@ -140,13 +103,13 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
               ),
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
 
             // USER + MOOD
             Row(
               children: [
                 CircleAvatar(
-                  radius: 9,
+                  radius: 10,
                   backgroundColor: Colors.pink[100],
                   child: Text(
                     item['user'] != null
@@ -155,7 +118,7 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
                     style: const TextStyle(fontSize: 10),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
 
                 Expanded(
                   child: Text(
@@ -198,14 +161,8 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
         }
 
         final items = snapshot.data!;
-        return GridView.builder(
+        return ListView.builder(
           padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.62,
-          ),
           itemCount: items.length,
           itemBuilder: (context, index) {
             return GestureDetector(
@@ -213,12 +170,11 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        OutfitDetailPage(item: items[index]),
+                    builder: (_) => OutfitDetailPage(item: items[index]),
                   ),
                 );
               },
-              child: _buildOutfitItem(items[index]),
+              child: _buildOutfitCard(items[index]),
             );
           },
         );
@@ -264,7 +220,7 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
   }
 }
 
-// ================= DETAIL PAGE =================
+// ================= DETAIL =================
 class OutfitDetailPage extends StatelessWidget {
   final Map<String, dynamic> item;
   const OutfitDetailPage({super.key, required this.item});
@@ -293,13 +249,6 @@ class OutfitDetailPage extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              'Diposting oleh: ${item['user'] != null ? item['user']['name'] : 'Anonymous'}',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 10),
-            Text('Mood: ${item['mood'] ?? '-'}'),
           ],
         ),
       ),
