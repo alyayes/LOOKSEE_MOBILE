@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 // Import Navbar
 import '../navbar/navbar.dart';
-// IMPORT HALAMAN DETAIL YANG BARU DIBUAT
-import 'detail_style_journal.dart'; 
+// Import halaman detail
+import 'detail_style_journal.dart';
 
 class StyleJournalScreen extends StatefulWidget {
   const StyleJournalScreen({super.key});
@@ -12,49 +15,58 @@ class StyleJournalScreen extends StatefulWidget {
 }
 
 class _StyleJournalScreenState extends State<StyleJournalScreen> {
-  // Data Gambar & Judul
-  final List<Map<String, String>> journalData = [
-    {
-      'image': 'assets/styleJournal/image1.png', 
-      'title': 'Streetwear Vibes'
-    },
-    {
-      'image': 'assets/styleJournal/image2.png', 
-      'title': 'Casual Sunday'
-    },
-    {
-      'image': 'assets/styleJournal/image3.png', 
-      'title': 'Formal Looks'
-    },
-    {
-      'image': 'assets/styleJournal/image4.png', 
-      'title': 'Summer OOTD'
-    },
-     {
-      'image': 'assets/styleJournal/image5.png', 
-      'title': 'Winter Collection'
-    },
-  ];
+  List<dynamic> journalData = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchStyleJournals();
+  }
+
+  // ===============================
+  // FETCH DATA DARI LARAVEL API
+  // ===============================
+  Future<void> fetchStyleJournals() async {
+    final url = Uri.parse('http://10.0.2.2:8000/api/stylejournals');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+
+        setState(() {
+          journalData = decoded['data']; // karena paginate
+          isLoading = false;
+        });
+      } else {
+        debugPrint('Gagal load data');
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      
-      // NAVBAR MENGAMBANG
-      extendBody: true, 
+
+      // NAVBAR
+      extendBody: true,
       bottomNavigationBar: const CustomNavBar(currentIndex: 3),
-      
+
       body: SafeArea(
-        bottom: false, 
+        bottom: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 10),
-              
-              // --- HEADER ---
+
+              // ================= HEADER =================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -64,7 +76,6 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
-                      letterSpacing: 0.5,
                     ),
                   ),
                   Row(
@@ -81,10 +92,10 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
                   )
                 ],
               ),
-              
+
               const SizedBox(height: 20),
-              
-              // --- SEARCH BAR ---
+
+              // ================= SEARCH =================
               Container(
                 height: 50,
                 decoration: BoxDecoration(
@@ -103,46 +114,54 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
                     prefixIcon: Icon(Icons.search, color: Color(0xFFFF69B4)),
                     hintText: "Search...",
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
               ),
 
               const SizedBox(height: 30),
-              
-              // --- SUBTITLE ---
+
+              // ================= SUBTITLE =================
               const Text(
                 "Fashion Insights",
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
                   fontStyle: FontStyle.italic,
-                  color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 5),
               const Text(
                 "Explore tips, tricks, and trends!",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              
+
               const SizedBox(height: 25),
 
-              // --- LIST KARTU ---
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: journalData.length,
-                itemBuilder: (context, index) {
-                  return HoverFashionCard(
-                    imagePath: journalData[index]['image']!,
-                    title: journalData[index]['title']!,
-                  );
-                },
-              ),
+              // ================= LIST CARD =================
+              if (isLoading)
+                const Padding(
+                  padding: EdgeInsets.only(top: 40),
+                  child: CircularProgressIndicator(),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: journalData.length,
+                  itemBuilder: (context, index) {
+                    final item = journalData[index];
+
+                    return HoverFashionCard(
+                      
+                      imagePath: item['image'] != null
+                          ? 'http://10.0.2.2:8000/storage/${item['image']}'
+                          : '',
+                      title: item['title'],
+                      content: item['content'],
+                      date: item['formatted_date'] ?? '',
+                    );
+                  },
+                ),
 
               const SizedBox(height: 120),
             ],
@@ -153,17 +172,21 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
   }
 }
 
-// =========================================================
-// HOVER CARD YANG NAVIGASI KE DETAIL
-// =========================================================
+// =======================================================
+// CARD TETAP SAMA (DESIGN ASLI TIDAK DIUBAH)
+// =======================================================
 class HoverFashionCard extends StatefulWidget {
   final String imagePath;
   final String title;
+  final String content;
+  final String date;
 
   const HoverFashionCard({
-    super.key, 
-    required this.imagePath, 
-    required this.title
+    super.key,
+    required this.imagePath,
+    required this.title,
+    required this.content,
+    required this.date,
   });
 
   @override
@@ -178,31 +201,24 @@ class _HoverFashionCardState extends State<HoverFashionCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
-      
       child: GestureDetector(
-        onTapDown: (_) => setState(() => _isHovering = true),
-        onTapUp: (_) => setState(() => _isHovering = false),
-        onTapCancel: () => setState(() => _isHovering = false),
-        
-        // --- NAVIGASI SAAT KLIK CARD DI SINI ---
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => DetailStyleJournal(
+              builder: (_) => DetailStyleJournal(
                 imagePath: widget.imagePath,
                 title: widget.title,
+                content: widget.content,
+                date: widget.date,
               ),
             ),
           );
         },
-        
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
           margin: const EdgeInsets.only(bottom: 25),
-          height: 200, 
-          width: double.infinity,
+          height: 200,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
@@ -218,43 +234,30 @@ class _HoverFashionCardState extends State<HoverFashionCard> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Gambar
-                Image.asset(
+                Image.network(
                   widget.imagePath,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40),
-                      ),
-                    );
-                  },
+                  errorBuilder: (_, __, ___) => Container(
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.image, size: 40),
+                  ),
                 ),
-
-                // Overlay Gelap
                 AnimatedOpacity(
-                  opacity: _isHovering ? 0.7 : 0.0, 
+                  opacity: _isHovering ? 0.7 : 0.0,
                   duration: const Duration(milliseconds: 300),
                   child: Container(color: Colors.black),
                 ),
-
-                // Judul
                 AnimatedOpacity(
                   opacity: _isHovering ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 300),
                   child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        widget.title,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
-                        ),
+                    child: Text(
+                      widget.title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),

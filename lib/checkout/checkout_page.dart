@@ -194,10 +194,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   : await ApiService().addAddress(data);
               if (ok) {
                 _fetchCheckoutData();
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil simpan alamat!")));
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Address saved successfully!")));
               } else {
                 setState(() => _isLoading = false);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal simpan alamat.")));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to save address.")));
               }
             },
             child: const Text("Save"),

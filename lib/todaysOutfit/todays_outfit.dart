@@ -1,6 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../navbar/navbar.dart';
 
+
+// ================= API SERVICE =================
+class ApiService {
+  static const String baseUrl = "http://10.0.2.2:8000/api";
+
+  Future<List<dynamic>> fetchPosts(String endpoint) async {
+    final cleanEndpoint =
+        endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+
+    final url = Uri.parse('$baseUrl/$cleanEndpoint');
+    final response =
+        await http.get(url).timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> decoded = json.decode(response.body);
+      return decoded['data'] ?? [];
+    } else {
+      throw Exception("Gagal memuat data");
+    }
+  }
+}
+
+// ================= MAIN =================
 void main() {
   runApp(const TodaysOutfitApp());
 }
@@ -16,24 +41,13 @@ class TodaysOutfitApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.pink,
         scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          titleTextStyle: TextStyle(
-            color: Colors.black,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-          iconTheme: IconThemeData(color: Colors.black),
-        ),
       ),
       home: const TodaysOutfitScreen(),
     );
   }
 }
 
-enum FilterCategory { all, woman, man }
-
+// ================= SCREEN =================
 class TodaysOutfitScreen extends StatefulWidget {
   const TodaysOutfitScreen({super.key});
 
@@ -43,136 +57,13 @@ class TodaysOutfitScreen extends StatefulWidget {
 
 class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
     with SingleTickerProviderStateMixin {
-  FilterCategory _selectedFilter = FilterCategory.all;
   late TabController _tabController;
-
-  final List<Map<String, dynamic>> exploreItems = const [
-    {
-      'title': 'Pinky outfit for toda...', 'user': 'Lucy', 'mood': 'Happy',
-      'moodColor': Color(0xFFF7A2B4), 'imageColor': Color(0xFFFDE4E6),
-      'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to4.jpg',
-    },
-    {
-      'title': 'Just simple fit', 'user': 'Louis', 'mood': 'Neutral',
-      'moodColor': Color(0xFFD4D4D4), 'imageColor': Color(0xFFEBEBEB),
-      'profileColor': Color(0xFFB0C4DE), 'imagePath': 'assets/to3.jpeg',
-    },
-    {
-      'title': "Today's Class was...", 'user': 'Lucy', 'mood': 'Very Happy',
-      'moodColor': Color(0xFFF28F9E), 'imageColor': Color(0xFFF5F5F5),
-      'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to1.jpg',
-    },
-    {
-      'title': 'Gloomy day, gloo...', 'user': 'Louis', 'mood': 'Sad',
-      'moodColor': Color(0xFFADD8E6), 'imageColor': Color(0xFF303030),
-      'profileColor': Color(0xFFB0C4DE), 'imagePath': 'assets/to2.jpg',
-    },
-    {
-      'title': 'Summer Vibes', 'user': 'Mia', 'mood': 'Verry Sad',
-      'moodColor': Color(0xFFFFA07A), 'imageColor': Color(0xFFFFEBCD),
-      'profileColor': Color(0xFFFFB6C1), 'imagePath': 'assets/to7.jpg',
-    },
-    {
-      'title': 'Formal Look', 'user': 'Leo', 'mood': 'Neutral',
-      'moodColor': Color(0xFF90EE90), 'imageColor': Color(0xFFD3D3D3),
-      'profileColor': Color(0xFF87CEEB), 'imagePath': 'assets/to6.jpeg',
-    },
-    {
-      'title': 'Pinky outfit for toda...', 'user': 'Lucy', 'mood': 'Happy',
-      'moodColor': Color(0xFFF7A2B4), 'imageColor': Color(0xFFFDE4E6),
-      'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to35.jpg',
-    },
-    {
-      'title': 'Just simple fit', 'user': 'Louis', 'mood': 'Neutral',
-      'moodColor': Color(0xFFD4D4D4), 'imageColor': Color(0xFFEBEBEB),
-      'profileColor': Color(0xFFB0C4DE), 'imagePath': 'assets/to38.jpg',
-    },
-    {
-      'title': "Today's Class was...", 'user': 'Lucy', 'mood': 'Very Happy',
-      'moodColor': Color(0xFFF28F9E), 'imageColor': Color(0xFFF5F5F5),
-      'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to37.jpg',
-    },
-    {
-      'title': 'Gloomy day, gloo...', 'user': 'Louis', 'mood': 'Sad',
-      'moodColor': Color(0xFFADD8E6), 'imageColor': Color(0xFF303030),
-      'profileColor': Color(0xFFB0C4DE), 'imagePath': 'assets/to39.jpg',
-    },
-  ];
-
-  final List<Map<String, dynamic>> trendsItems = const [
-    {
-      'title': 'Best Streetwear 2024', 'user': 'Sam', 'mood': 'Sad',
-      'moodColor': Color(0xFF4682B4), 'imageColor': Color(0xFFE0FFFF),
-      'profileColor': Color(0xFFA9A9A9), 'imagePath': 'assets/to2.jpg',
-    },
-    {
-      'title': 'Aesthetic Vintage', 'user': 'Anna', 'mood': 'Happy',
-      'moodColor': Color(0xFF8FBC8F), 'imageColor': Color(0xFFFAFAD2),
-      'profileColor': Color(0xFFBDB76B), 'imagePath': 'assets/to8.jpg',
-    },
-    {
-      'title': 'Minimalist Core', 'user': 'Alex', 'mood': 'Sad',
-      'moodColor': Color(0xFF696969), 'imageColor': Color(0xFFF0F0F0),
-      'profileColor': Color(0xFF6A5ACD), 'imagePath': 'assets/to1.jpg',
-    },
-    ...const [
-      {
-        'title': 'Gloomy day, gloo...', 'user': 'Louis', 'mood': 'Sad',
-        'moodColor': Color(0xFFADD8E6), 'imageColor': Color(0xFF303030),
-        'profileColor': Color(0xFFB0C4DE), 'imagePath': 'assets/to9.jpeg',
-      },
-      {
-        'title': 'Summer Vibes', 'user': 'Mia', 'mood': 'Verry Happy',
-        'moodColor': Color(0xFFFFA07A), 'imageColor': Color(0xFFFFEBCD),
-        'profileColor': Color(0xFFFFB6C1), 'imagePath': 'assets/to7.jpg',
-      },
-      {
-        'title': 'Formal Look', 'user': 'Leo', 'mood': 'Happy',
-        'moodColor': Color(0xFF90EE90), 'imageColor': Color(0xFFD3D3D3),
-        'profileColor': Color(0xFF87CEEB), 'imagePath': 'assets/to10.jpeg',
-      },
-    ]
-  ];
-
-  final List<Map<String, dynamic>> latestItems = const [
-    {
-      'title': 'New In: Velvet Dress', 'user': 'Eva', 'mood': 'Verry Sad',
-      'moodColor': Color(0xFF800080), 'imageColor': Color(0xFFE6E6FA),
-      'profileColor': Color(0xFFC71585), 'imagePath': 'assets/to11.jpeg',
-    },
-    {
-      'title': 'Cargo Pants Fit', 'user': 'Tom', 'mood': 'Neutral',
-      'moodColor': Color(0xFF6B8E23), 'imageColor': Color(0xFFF5F5DC),
-      'profileColor': Color(0xFF8B4513), 'imagePath': 'assets/to24.jpg',
-    },
-    {
-      'title': 'Casual Sunday', 'user': 'Jane', 'mood': 'Happy',
-      'moodColor': Color(0xFF00CED1), 'imageColor': Color(0xFFF0FFFF),
-      'profileColor': Color(0xFF4682B4), 'imagePath': 'assets/to8.jpg',
-    },
-    ...const [
-      {
-        'title': 'Pinky outfit for toda...', 'user': 'Lucy', 'mood': 'Happy',
-        'moodColor': Color(0xFFF7A2B4), 'imageColor': Color(0xFFFDE4E6),
-        'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to4.jpg',
-      },
-      {
-        'title': 'Just simple fit', 'user': 'Louis', 'mood': 'Neutral',
-        'moodColor': Color(0xFFD4D4D4), 'imageColor': Color(0xFFEBEBEB),
-        'profileColor': Color(0xFFB0C4DE), 'imagePath': 'assets/to3.jpeg',
-      },
-      {
-        'title': "Today's Class was...", 'user': 'Lucy', 'mood': 'Very Happy',
-        'moodColor': Color(0xFFF28F9E), 'imageColor': Color(0xFFF5F5F5),
-        'profileColor': Color(0xFFF5C7C7), 'imagePath': 'assets/to1.jpg',
-      },
-    ]
-  ];
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this, initialIndex: 0);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -181,7 +72,12 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
     super.dispose();
   }
 
-  Widget _buildMoodTag(String mood, Color color) {
+  // ================= MOOD TAG =================
+  Widget _buildMoodTag(String mood) {
+    Color color = const Color(0xFFF7A2B4);
+    if (mood.toLowerCase().contains('sad')) color = Colors.blue;
+    if (mood.toLowerCase().contains('neutral')) color = Colors.grey;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -191,135 +87,92 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
       child: Text(
         mood,
         style: const TextStyle(
-          color: Colors.white,
           fontSize: 10,
           fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
       ),
     );
   }
 
+  // ================= CARD ITEM =================
   Widget _buildOutfitItem(Map<String, dynamic> item) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AspectRatio(
-          aspectRatio: 3 / 4,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: item['imagePath'] != null
-                ? Image.asset(
-                    item['imagePath'] as String,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.red[100],
-                        child: const Center(
-                          child: Icon(Icons.error_outline,
-                              color: Colors.red, size: 40),
-                        ),
-                      );
-                    },
-                  )
-                : Container(
-                    color: item['imageColor'],
-                    child: const Center(
-                        child: Icon(Icons.photo,
-                            size: 40, color: Colors.grey)),
-                  ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          item['title'] as String,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 2),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final imageUrl =
+        "http://10.0.2.2:8000/storage/posts/${item['image_post']}";
+
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
+            // IMAGE
+            AspectRatio(
+              aspectRatio: 3 / 4,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.broken_image),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // TITLE
+            Text(
+              item['caption'] ?? 'No Title',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            // USER + MOOD
             Row(
               children: [
                 CircleAvatar(
-                  radius: 8,
-                  backgroundColor: item['profileColor'],
+                  radius: 9,
+                  backgroundColor: Colors.pink[100],
                   child: Text(
-                    (item['user'] as String).substring(0, 1),
+                    item['user'] != null
+                        ? item['user']['name'][0]
+                        : '?',
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                ),
+                const SizedBox(width: 6),
+
+                Expanded(
+                  child: Text(
+                    item['user'] != null
+                        ? item['user']['name']
+                        : 'Anonymous',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 9,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.grey,
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  item['user'] as String,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
+
+                _buildMoodTag(item['mood'] ?? 'Happy'),
               ],
-            ),
-            _buildMoodTag(item['mood'] as String, item['moodColor'] as Color),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategoryPill(String text, FilterCategory category,
-      {IconData? icon, bool isStatic = false}) {
-    bool isSelected = !isStatic && _selectedFilter == category;
-    Color textColor = isSelected ? Colors.white : Colors.black;
-    Color backgroundColor =
-        isSelected ? const Color(0xFFF7A2B4) : Colors.white;
-    Color borderColor =
-        isSelected ? const Color(0xFFF7A2B4) : Colors.grey.shade300;
-
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      child: OutlinedButton(
-        onPressed: isStatic
-            ? () {
-                print('Tombol Filter ditekan!');
-              }
-            : () {
-                setState(() {
-                  _selectedFilter = category;
-                });
-                print('Filter dipilih: $text');
-              },
-        style: OutlinedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          side: BorderSide(color: borderColor),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          minimumSize: Size.zero,
-        ),
-        child: Row(
-          children: [
-            if (icon != null) ...[
-              Icon(icon, color: textColor, size: 16),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              text,
-              style: TextStyle(
-                color: textColor,
-                fontWeight:
-                    isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 14,
-              ),
             ),
           ],
         ),
@@ -327,104 +180,80 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
     );
   }
 
+  // ================= PAGE =================
+  Widget _buildPage(String endpoint) {
+    return FutureBuilder<List<dynamic>>(
+      future: _apiService.fetchPosts(endpoint),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return const Center(child: Text("Gagal memuat data"));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text("Data kosong"));
+        }
+
+        final items = snapshot.data!;
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.62,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        OutfitDetailPage(item: items[index]),
+                  ),
+                );
+              },
+              child: _buildOutfitItem(items[index]),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60.0),
-        child: Padding(
-          padding:
-              const EdgeInsets.only(top: 10.0, left: 16.0, right: 16.0),
-          child: AppBar(
-            automaticallyImplyLeading: false,
-            title: const Text('Todays Outfit'),
-            actions: [
-              Container(
-                width: 150,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Icon(Icons.search,
-                          color: Colors.grey, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      appBar: AppBar(
+        title: const Text('Todays Outfit'),
+        centerTitle: true,
       ),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding:
-                const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              indicatorColor: const Color(0xFFF7A2B4),
-              labelColor: const Color(0xFFF7A2B4),
-              unselectedLabelColor: Colors.black,
-              labelStyle: const TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 16),
-              unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.normal, fontSize: 16),
-              indicator: const UnderlineTabIndicator(
-                borderSide: BorderSide(
-                  color: Color(0xFFF7A2B4),
-                  width: 3.0,
-                ),
-                insets: EdgeInsets.only(bottom: 5.0),
-              ),
-              indicatorSize: TabBarIndicatorSize.label,
-              tabAlignment: TabAlignment.start,
-              tabs: const [
-                Tab(text: 'Explore'),
-                Tab(text: 'Trends'),
-                Tab(text: 'Latest'),
-              ],
-            ),
+          TabBar(
+            controller: _tabController,
+            labelColor: const Color(0xFFF7A2B4),
+            unselectedLabelColor: Colors.black,
+            indicatorColor: const Color(0xFFF7A2B4),
+            tabs: const [
+              Tab(text: 'Explore'),
+              Tab(text: 'Trends'),
+              Tab(text: 'Latest'),
+            ],
           ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  _buildCategoryPill('All', FilterCategory.all),
-                  _buildCategoryPill('Woman', FilterCategory.woman),
-                  _buildCategoryPill('Man', FilterCategory.man),
-                  _buildCategoryPill('Filter', FilterCategory.all,
-                      icon: Icons.filter_list, isStatic: true),
-                ],
-              ),
-            ),
-          ),
-
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                ExplorePage(
-                    outfitItems: exploreItems,
-                    buildOutfitItem: _buildOutfitItem),
-                ExplorePage(
-                    outfitItems: trendsItems,
-                    buildOutfitItem: _buildOutfitItem),
-                ExplorePage(
-                    outfitItems: latestItems,
-                    buildOutfitItem: _buildOutfitItem),
+                _buildPage('community/todays-outfit'),
+                _buildPage('community/trends'),
+                _buildPage('community/todays-outfit'),
               ],
             ),
           ),
@@ -435,117 +264,43 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
   }
 }
 
-class ExplorePage extends StatelessWidget {
-  final List<Map<String, dynamic>> outfitItems;
-  final Widget Function(Map<String, dynamic>) buildOutfitItem;
-
-  const ExplorePage({
-    super.key,
-    required this.outfitItems,
-    required this.buildOutfitItem,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: GridView.builder(
-        padding: const EdgeInsets.only(bottom: 80.0),
-        gridDelegate:
-            const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10.0,
-          mainAxisSpacing: 10.0,
-          childAspectRatio: 0.65,
-        ),
-        itemCount: outfitItems.length,
-        itemBuilder: (context, index) {
-          final item = outfitItems[index];
-
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      OutfitDetailPage(item: item),
-                ),
-              );
-            },
-            child: buildOutfitItem(item),
-          );
-        },
-      ),
-    );
-  }
-}
-
+// ================= DETAIL PAGE =================
 class OutfitDetailPage extends StatelessWidget {
   final Map<String, dynamic> item;
-
   const OutfitDetailPage({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl =
+        "http://10.0.2.2:8000/storage/posts/${item['image_post']}";
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Outfit'),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Anda telah melihat postingan:',
-                style:
-                    Theme.of(context).textTheme.headlineSmall,
+      appBar: AppBar(title: const Text('Detail Outfit')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.network(imageUrl),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              item['caption'] ?? '-',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 10),
-              Text(
-                item['title'] as String,
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineMedium!
-                    .copyWith(
-                      color: const Color(0xFFF7A2B4),
-                      fontWeight: FontWeight.bold,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-
-              if (item['imagePath'] != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.asset(
-                    item['imagePath'] as String,
-                    height: 300,
-                    fit: BoxFit.cover,
-                    errorBuilder:
-                        (context, error, stackTrace) {
-                      return Container(
-                        height: 300,
-                        color: Colors.red[100],
-                        child: const Center(
-                            child: Text(
-                                'Gagal memuat gambar detail.')),
-                      );
-                    },
-                  ),
-                ),
-              const SizedBox(height: 20),
-
-              Text(
-                  'Diposting oleh: ${item['user']} (Mood: ${item['mood']})'),
-
-              const SizedBox(height: 40),
-
-              const Text(
-                  'Ini adalah halaman detail outfit yang dapat Anda kembangkan lebih lanjut.'),
-            ],
-          ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Diposting oleh: ${item['user'] != null ? item['user']['name'] : 'Anonymous'}',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 10),
+            Text('Mood: ${item['mood'] ?? '-'}'),
+          ],
         ),
       ),
     );

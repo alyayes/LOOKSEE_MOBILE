@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/post_model.dart';
 
 class ApiService {
   // IP Laptop Kamu (Sesuai kesepakatan)
@@ -21,7 +22,6 @@ class ApiService {
   // 1. AUTHENTICATION (Register, Login, Logout, User)
   // ===============================================================
 
-  
   // Ubah return type jadi Future<String> (Bukan bool lagi)
   Future<String> register(String username, String email, String password) async {
     try {
@@ -32,7 +32,7 @@ class ApiService {
           'username': username,
           'email': email,
           'password': password,
-          'password_confirmation': password, 
+          'password_confirmation': password,
         }),
       );
 
@@ -43,7 +43,7 @@ class ApiService {
         return "OK"; // Kode rahasia kalau sukses
       } else {
         // Kembalikan pesan error dari Laravel
-        return response.body; 
+        return response.body;
       }
     } catch (e) {
       // Kembalikan pesan error koneksi
@@ -64,7 +64,7 @@ class ApiService {
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
         // 🔥 PASTIKAN INI TERISI:
-        _token = data['token']; 
+        _token = data['token'];
         print("Token tersimpan: $_token");
         return true;
       }
@@ -101,13 +101,21 @@ class ApiService {
   // ===============================================================
 
   Future<dynamic> getProfile() async {
-    final response = await http.get(Uri.parse('$baseUrl/profile'), headers: _getHeaders());
-    if (response.statusCode == 200) return json.decode(response.body);
+    // 🔥 UBAH: Ganti /profile menjadi /user agar sesuai dengan AuthController@user di Laravel
+    final response = await http.get(Uri.parse('$baseUrl/user'), headers: _getHeaders());
+    
+    // Tambahkan print ini untuk memastikan data yang datang adalah "garden"
+    print("DEBUG RESPONSE PROFILE: ${response.body}"); 
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
     return null;
   }
 
   Future<bool> updateProfile(String name, String phone, String address) async {
-    final response = await http.post( // Pakai POST biasanya untuk update data diri di Laravel
+    final response = await http.post(
+      // Pakai POST biasanya untuk update data diri di Laravel
       Uri.parse('$baseUrl/profile/update'),
       headers: _getHeaders(),
       body: jsonEncode({
@@ -123,31 +131,25 @@ class ApiService {
   // 3. PRODUCTS (apiResource 'produk')
   // ===============================================================
 
-  Future<List<dynamic>> getProducts() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/produk'), headers: _getHeaders());
-      
-      if (response.statusCode == 200) {
-        var data = json.decode(response.body);
-        
-        // LOGIC BARU: Cek tipe datanya
-        // Kalau Controller kirim langsung List [], terima langsung
-        if (data is List) {
-          return data; 
-        }
-        // Kalau Controller kirim {'data': []}, ambil dalamnya
-        else if (data is Map && data.containsKey('data')) {
-          return data['data'];
-        }
-        
-        return [];
-      }
-      return [];
-    } catch (e) {
-      print("Error Get Products: $e");
-      return [];
+  Future<List<dynamic>> getProducts({String? mood, String? category}) async {
+  try {
+    // Menambahkan query parameter untuk filter
+    String url = '$baseUrl/produk?';
+    if (mood != null) url += 'mood=$mood&';
+    if (category != null) url += 'category=$category';
+
+    final response = await http.get(Uri.parse(url), headers: _getHeaders());
+    
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body);
+      return data is List ? data : data['data'];
     }
+    return [];
+  } catch (e) {
+    print("Error Get Products: $e");
+    return [];
   }
+}
 
   // ===============================================================
   // 4. COMMUNITY & POSTS
@@ -182,7 +184,8 @@ class ApiService {
     final response = await http.delete(Uri.parse('$baseUrl/profile/post/$id'), headers: _getHeaders());
     return response.statusCode == 200;
   }
-  // ===============================================================
+
+   // ===============================================================
   // 5. CART (KERANJANG) - Sinkron dengan ApiCartController.php
   // ===============================================================
 
@@ -254,7 +257,6 @@ class ApiService {
       return false;
     }
   }
-  
  // ===============================================================
   // 6. CHECKOUT & ADDRESS
   // ===============================================================
@@ -388,4 +390,65 @@ class ApiService {
     if (response.statusCode == 200) return json.decode(response.body);
     return null;
   }
-}
+
+  // ===============================================================
+  // 8. FAVORITES & LIKES
+  // ===============================================================
+
+  // Ambil daftar produk favorit dan postingan yang di-like
+  Future<Map<String, dynamic>?> getFavorites() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/favorites'),
+        headers: _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print("Error getFavorites: $e");
+      return null;
+    }
+  }
+
+  // Toggle Favorite Produk (Tambah jika belum ada, Hapus jika sudah ada)
+  Future<Map<String, dynamic>?> toggleFavorite(String productId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/favorites/add'),
+        headers: _getHeaders(),
+        body: jsonEncode({
+          'id_produk': productId,
+        }),
+      );
+
+      // Status 200 (removed) atau 201 (added)
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print("Error toggleFavorite: $e");
+      return null;
+    }
+  }
+
+  // Hapus dari favorit secara spesifik (Memanggil function destroy di API)
+  Future<bool> deleteFavorite(String productId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/favorites/delete'),
+        headers: _getHeaders(),
+        body: jsonEncode({
+          'id_produk': productId,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error deleteFavorite: $e");
+      return false;
+    }
+  }
+} 

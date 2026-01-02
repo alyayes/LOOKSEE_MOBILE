@@ -6,7 +6,7 @@ import '../post/gallery.dart';
 
 // === IMPORT KEDUA HALAMAN INI AGAR TIDAK ERROR ===
 import '../todaysOutfit/todays_outfit.dart';   // Untuk TodaysOutfitScreen
-import '../styleJournal/style_journal.dart';   // Untuk StyleJournalScreen
+import '../styleJournal/style_journal.dart';   // Untuk StyleJournalPage
 import '../Profile/profile_screen.dart';
 
 class CustomNavBar extends StatelessWidget {
