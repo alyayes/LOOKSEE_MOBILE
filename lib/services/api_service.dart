@@ -4,7 +4,7 @@ import '../models/post_model.dart';
 
 class ApiService {
   // IP Laptop Kamu (Sesuai kesepakatan)
-  static const String baseUrl = "http://172.28.115.142:8001/api";
+  static const String baseUrl = "http://10.128.83.120:8001/api";
 
   // Variabel untuk menyimpan Token Login sementara
   static String? _token;
