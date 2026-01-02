@@ -262,23 +262,14 @@ class ApiService {
   // 1. TAMBAHKAN FUNGSI INI DI DALAM CLASS ApiService
   Future<Map<String, dynamic>?> getCheckoutSummary(String productIds) async {
     try {
-      // Endpoint ini sesuai dengan getCheckoutData di ApiCheckoutController.php
       final response = await http.get(
         Uri.parse('$baseUrl/checkout/summary?selected_products=$productIds'),
         headers: _getHeaders(),
       );
-
-      print("Response Summary: ${response.body}");
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      }
-      return null;
-    } catch (e) {
-      print("Error getCheckoutSummary: $e");
-      return null;
-    }
+      return response.statusCode == 200 ? json.decode(response.body) : null;
+    } catch (e) { return null; }
   }
+
 
   // Ambil Daftar Alamat User
   Future<List<dynamic>> getUserAddresses() async {
@@ -293,10 +284,10 @@ class ApiService {
   // Proses Simpan Order ke Database (PASTIKAN NAMA PARAMETER SAMA)
   Future<Map<String, dynamic>?> processCheckout({
     required String selectedProducts,
-    required String address_id,      // Gunakan underscore
-    required String payment_method,  // Gunakan underscore
-    String? bank_id,                 // Gunakan underscore
-    String? ewallet_id,              // Gunakan underscore
+    required String address_id,
+    required String payment_method,
+    String? bank_id,
+    String? ewallet_id,
   }) async {
     try {
       final response = await http.post(
@@ -310,38 +301,102 @@ class ApiService {
           'ewallet_id': ewallet_id,
         }),
       );
+
+      print("LOG CHECKOUT - Body: ${response.body}");
+      
       if (response.statusCode == 201 || response.statusCode == 200) {
         return json.decode(response.body);
       }
-      return null;
+      return json.decode(response.body); 
     } catch (e) {
+      print("Error Catch Checkout: $e");
       return null;
     }
   }
 
   // --- MANAJEMEN ALAMAT ---
   Future<bool> addAddress(Map<String, dynamic> data) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/checkout/add-address'),
-      headers: _getHeaders(),
-      body: jsonEncode(data),
-    );
-    return response.statusCode == 200 || response.statusCode == 201;
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/checkout/add-address'),
+        headers: _getHeaders(),
+        body: jsonEncode(data),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Cari fungsi updateAddress di api_service.dart dan ubah menjadi:
+  Future<bool> updateAddress(String id, Map<String, dynamic> data) async {
+    try {
+      // Kita pakai POST tapi kasih tahu Laravel ini adalah PUT melalui Query Parameter
+      // Ini cara paling ampuh di Flutter agar Laravel tidak bingung
+      final response = await http.post(
+        Uri.parse('$baseUrl/checkout/update-address/$id?_method=PUT'),
+        headers: _getHeaders(),
+        body: jsonEncode(data),
+      );
+
+      print("Edit Status: ${response.statusCode}");
+      print("Edit Response: ${response.body}");
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print("Error Update Address: $e");
+      return false;
+    }
   }
 
   Future<bool> deleteAddress(String id) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl/checkout/delete-address/$id'),
-      headers: _getHeaders(),
-    );
-    return response.statusCode == 200;
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/checkout/delete-address/$id'),
+        headers: _getHeaders(),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
   }
 
   
   // ===============================================================
-  // 7. PAYMENT
+  // 7. ORDER & PAYMENT
   // ===============================================================
-  
+  // Tambahkan ini di dalam class ApiService di lib/services/api_service.dart
+
+  // Ambil List Pesanan
+  Future<List<dynamic>> getOrders() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/list-orders'), // Pastikan di api.php namanya list-orders
+        headers: _getHeaders(),
+      );
+      
+      print("DEBUG: Status Code Orders: ${response.statusCode}");
+      print("DEBUG: Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        return data['data'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      print("Error Koneksi Get Orders: $e");
+      return [];
+    }
+  }
+
+  // Ambil Detail Pesanan
+  Future<Map<String, dynamic>?> getOrderDetail(String id) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/order-details/$id'), headers: _getHeaders());
+      return response.statusCode == 200 ? json.decode(response.body)['data'] : null;
+    } catch (e) { return null; }
+  }
+
   Future<dynamic> getPaymentDetails() async {
     final response = await http.get(Uri.parse('$baseUrl/payment/details'), headers: _getHeaders());
     if (response.statusCode == 200) return json.decode(response.body);
