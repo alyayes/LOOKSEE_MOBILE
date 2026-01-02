@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/style_journal_model.dart';
 
 class StyleJournalService {
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
+  static const String baseUrl = 'http://localhost:8000';
 
   Future<List<StyleJournal>> fetchJournals() async {
     final response = await http.get(Uri.parse('$baseUrl/stylejournals'));

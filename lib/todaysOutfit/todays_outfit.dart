@@ -5,10 +5,10 @@ import '../navbar/navbar.dart';
 
 // ================= API SERVICE =================
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:8000/api";
+  static const String apiBaseUrl = "http://10.0.2.2:8000/api";
 
   Future<List<dynamic>> fetchPosts(String endpoint) async {
-    final url = Uri.parse('$baseUrl/$endpoint');
+    final url = Uri.parse('$apiBaseUrl/$endpoint');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -53,17 +53,14 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
       ),
       child: Text(
         mood,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
         style: const TextStyle(fontSize: 10, color: Colors.white),
       ),
     );
   }
 
-  // ================= CARD (AUTO HEIGHT) =================
+  // ================= CARD (FIX OVERFLOW) =================
   Widget _buildOutfitCard(Map<String, dynamic> item) {
-    final imageUrl =
-        "http://10.0.2.2:8000/storage/posts/${item['image_post']}";
+    final String imageUrl = item['image_url'];
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -74,25 +71,28 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // IMAGE
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: AspectRatio(
-                aspectRatio: 3 / 4,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.broken_image),
-                  ),
-                ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: AspectRatio(
+            aspectRatio: 3 / 4, // 🔥 INI KUNCI UTAMA
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(child: CircularProgressIndicator());
+              },
+              errorBuilder: (_, __, ___) => Container(
+                color: Colors.grey[200],
+                child: const Icon(Icons.broken_image),
               ),
             ),
+          ),
+        ),
+
 
             const SizedBox(height: 10),
 
-            // CAPTION
             Text(
               item['caption'] ?? '-',
               maxLines: 2,
@@ -105,7 +105,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
 
             const SizedBox(height: 8),
 
-            // USER + MOOD
             Row(
               children: [
                 CircleAvatar(
@@ -165,17 +164,7 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
           padding: const EdgeInsets.all(16),
           itemCount: items.length,
           itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => OutfitDetailPage(item: items[index]),
-                  ),
-                );
-              },
-              child: _buildOutfitCard(items[index]),
-            );
+            return _buildOutfitCard(items[index]);
           },
         );
       },
@@ -216,42 +205,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
         ],
       ),
       bottomNavigationBar: const CustomNavBar(currentIndex: 1),
-    );
-  }
-}
-
-// ================= DETAIL =================
-class OutfitDetailPage extends StatelessWidget {
-  final Map<String, dynamic> item;
-  const OutfitDetailPage({super.key, required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final imageUrl =
-        "http://10.0.2.2:8000/storage/posts/${item['image_post']}";
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Detail Outfit')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(imageUrl),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              item['caption'] ?? '-',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

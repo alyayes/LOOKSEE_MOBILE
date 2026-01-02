@@ -14,24 +14,41 @@ class StyleJournalScreen extends StatefulWidget {
 class _StyleJournalScreenState extends State<StyleJournalScreen> {
   final StyleJournalService _service = StyleJournalService();
 
+  late Future<List<StyleJournal>> _journalsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _journalsFuture = _service.fetchJournals(); // ✅ PANGGIL SEKALI
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
       bottomNavigationBar: const CustomNavBar(currentIndex: 3),
+
       body: SafeArea(
         child: FutureBuilder<List<StyleJournal>>(
-          future: _service.fetchJournals(),
+          future: _journalsFuture, // ✅ PAKAI FUTURE YANG DISIMPAN
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
             if (snapshot.hasError) {
-              return const Center(child: Text('Gagal memuat data'));
+              return Center(
+                child: Text('Error: ${snapshot.error}'),
+              );
             }
 
-            final data = snapshot.data!;
+            final data = snapshot.data;
+
+            if (data == null || data.isEmpty) {
+              return const Center(
+                child: Text('Style Journal masih kosong'),
+              );
+            }
 
             return ListView(
               padding: const EdgeInsets.all(20),
@@ -52,7 +69,7 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
                       : '';
 
                   return HoverFashionCard(
-                    id: item.id, // 🔥 PENTING
+                    id: item.id,
                     imagePath: imageUrl,
                     title: item.title,
                   );
@@ -67,5 +84,3 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
     );
   }
 }
-
-

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-// Post
+// Import halaman Camera & Gallery
 import '../post/camera.dart';
 import '../post/gallery.dart';
 
-// Pages
+// Import halaman utama
 import '../todaysOutfit/todays_outfit.dart';
 import '../styleJournal/style_journal.dart';
 import '../Profile/profile_screen.dart';
@@ -17,7 +17,7 @@ class CustomNavBar extends StatelessWidget {
     required this.currentIndex,
   }) : super(key: key);
 
-  // ================= MODAL CAMERA / GALLERY =================
+  // ================= MODAL UPLOAD =================
   void _showImagePickerModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -27,10 +27,7 @@ class CustomNavBar extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(25),
-              topRight: Radius.circular(25),
-            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -56,11 +53,11 @@ class CustomNavBar extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildModalOption(
+                  _modalButton(
                     context,
-                    icon: Icons.camera_alt_rounded,
-                    label: "Camera",
-                    onTap: () {
+                    Icons.camera_alt_rounded,
+                    "Camera",
+                    () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
@@ -70,11 +67,11 @@ class CustomNavBar extends StatelessWidget {
                       );
                     },
                   ),
-                  _buildModalOption(
+                  _modalButton(
                     context,
-                    icon: Icons.photo_library_rounded,
-                    label: "Gallery",
-                    onTap: () {
+                    Icons.photo_library_rounded,
+                    "Gallery",
+                    () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
@@ -94,12 +91,12 @@ class CustomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildModalOption(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
+  Widget _modalButton(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -113,31 +110,23 @@ class CustomNavBar extends StatelessWidget {
             child: Icon(icon, size: 40, color: const Color(0xFFFF69B4)),
           ),
           const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Colors.black54,
-            ),
-          ),
+          Text(label,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600, color: Colors.black54)),
         ],
       ),
     );
   }
 
-  // ================= UI NAVBAR =================
+  // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return SizedBox(
       height: 100,
-      width: size.width,
       child: Stack(
         alignment: Alignment.bottomCenter,
         clipBehavior: Clip.none,
         children: [
-          // BACKGROUND
           Positioned(
             bottom: 20,
             left: 20,
@@ -152,8 +141,8 @@ class CustomNavBar extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildNavItem(context, Icons.home_rounded, 0),
-                          _buildNavItem(context, Icons.checkroom_rounded, 1),
+                          _navItem(context, Icons.home_rounded, 0),
+                          _navItem(context, Icons.checkroom_rounded, 1),
                         ],
                       ),
                     ),
@@ -162,8 +151,8 @@ class CustomNavBar extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildNavItem(context, Icons.receipt_long_rounded, 3),
-                          _buildNavItem(context, Icons.person_rounded, 4),
+                          _navItem(context, Icons.receipt_long_rounded, 3),
+                          _navItem(context, Icons.person_rounded, 4),
                         ],
                       ),
                     ),
@@ -173,7 +162,7 @@ class CustomNavBar extends StatelessWidget {
             ),
           ),
 
-          // PLUS BUTTON
+          // tombol +
           Positioned(
             bottom: 50,
             child: GestureDetector(
@@ -187,13 +176,14 @@ class CustomNavBar extends StatelessWidget {
                   border: Border.all(color: Colors.white, width: 4),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF69B4).withOpacity(0.5),
+                      color: Colors.pink.withOpacity(0.5),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
                   ],
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 32),
+                child:
+                    const Icon(Icons.add, color: Colors.white, size: 32),
               ),
             ),
           ),
@@ -202,45 +192,37 @@ class CustomNavBar extends StatelessWidget {
     );
   }
 
-  // ================= ITEM NAV =================
-  Widget _buildNavItem(BuildContext context, IconData icon, int index) {
-    final isSelected = currentIndex == index;
+  // ================= NAV ITEM =================
+  Widget _navItem(BuildContext context, IconData icon, int index) {
+    final bool selected = currentIndex == index;
 
     return GestureDetector(
       onTap: () {
         if (index == currentIndex) return;
 
-        switch (index) {
-          case 0:
-            Navigator.pushReplacementNamed(context, '/home');
-            break;
-
-          case 1:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const TodaysOutfitScreen(),
-              ),
-            );
-            break;
-
-          case 3:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const StyleJournalScreen(),
-              ),
-            );
-            break;
-
-          case 4:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const ProfileScreen(),
-              ),
-            );
-            break;
+        if (index == 0) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else if (index == 1) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const TodaysOutfitScreen(),
+            ),
+          );
+        } else if (index == 3) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const StyleJournalScreen(),
+            ),
+          );
+        } else if (index == 4) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(token: ''),
+            ),
+          );
         }
       },
       child: Column(
@@ -248,12 +230,10 @@ class CustomNavBar extends StatelessWidget {
         children: [
           Icon(
             icon,
+            color: selected ? Colors.white : Colors.white70,
             size: 28,
-            color: isSelected
-                ? Colors.white
-                : Colors.white.withOpacity(0.6),
           ),
-          if (isSelected)
+          if (selected)
             Container(
               margin: const EdgeInsets.only(top: 4),
               width: 5,
@@ -279,55 +259,42 @@ class NavBarCurvePainter extends CustomPainter {
 
     final path = Path();
     final radius = size.height / 2;
-    final curveHeight = 30;
-    final curveWidth = 70;
 
-    path.moveTo(0, size.height / 2);
-    path.arcToPoint(
-      Offset(radius * 1.5, 0),
-      radius: Radius.circular(radius * 1.5),
-    );
-    path.lineTo((size.width / 2) - curveWidth, 0);
-
+    path.moveTo(0, radius);
+    path.arcToPoint(Offset(radius, 0),
+        radius: Radius.circular(radius));
+    path.lineTo(size.width / 2 - 35, 0);
     path.cubicTo(
-      (size.width / 2) - curveWidth / 2,
+      size.width / 2 - 20,
       0,
-      (size.width / 2) - curveWidth / 2,
-      -curveHeight,
+      size.width / 2 - 20,
+      -30,
       size.width / 2,
-      -curveHeight,
+      -30,
     );
-
     path.cubicTo(
-      (size.width / 2) + curveWidth / 2,
-      -curveHeight,
-      (size.width / 2) + curveWidth / 2,
+      size.width / 2 + 20,
+      -30,
+      size.width / 2 + 20,
       0,
-      (size.width / 2) + curveWidth,
+      size.width / 2 + 35,
       0,
     );
-
-    path.lineTo(size.width - (radius * 1.5), 0);
-    path.arcToPoint(
-      Offset(size.width, size.height / 2),
-      radius: Radius.circular(radius * 1.5),
-    );
+    path.lineTo(size.width - radius, 0);
+    path.arcToPoint(Offset(size.width, radius),
+        radius: Radius.circular(radius));
     path.lineTo(size.width, size.height - radius);
-    path.arcToPoint(
-      Offset(size.width - radius, size.height),
-      radius: Radius.circular(radius),
-    );
+    path.arcToPoint(Offset(size.width - radius, size.height),
+        radius: Radius.circular(radius));
     path.lineTo(radius, size.height);
-    path.arcToPoint(
-      Offset(0, size.height - radius),
-      radius: Radius.circular(radius),
-    );
+    path.arcToPoint(Offset(0, size.height - radius),
+        radius: Radius.circular(radius));
     path.close();
 
-    canvas.drawShadow(path, Colors.grey.withOpacity(0.4), 6, true);
+    canvas.drawShadow(path, Colors.black26, 6, true);
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
+  bool shouldRepaint(_) => false;
 }
