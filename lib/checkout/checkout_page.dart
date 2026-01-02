@@ -364,12 +364,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return Container(
       decoration: _boxDecoration(),
       child: Column(
-        children: _realProducts.map((item) => ListTile(
-          leading: ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(item['gambar_produk'], width: 45, height: 45, fit: BoxFit.cover, errorBuilder: (c,e,s)=>const Icon(Icons.image))),
-          title: Text(item['nama_produk'], style: const TextStyle(fontSize: 14)),
-          subtitle: Text("${item['quantity']} pcs"),
-          trailing: Text(_formatRp(item['subtotal']), style: const TextStyle(fontWeight: FontWeight.bold)),
-        )).toList(),
+        children: _realProducts.map((item) {
+          // LOGIC BARU: Ambil nama file saja dari URL yang dikirim server
+          String fullUrl = item['gambar_produk'] ?? '';
+          String fileName = fullUrl.split('/').last; 
+          // Gabungkan dengan path folder assets lokal kamu
+          String localPath = 'assets/produk-looksee/$fileName';
+
+          return ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              // GANTI ke Image.asset agar sinkron dengan CartPage
+              child: Image.asset(
+                localPath,
+                width: 45,
+                height: 45,
+                fit: BoxFit.cover,
+                // Jika file tidak ada di folder assets, tampilkan icon broken image
+                errorBuilder: (c, e, s) => Container(
+                  width: 45,
+                  height: 45,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.broken_image, size: 20, color: Colors.grey),
+                ),
+              ),
+            ),
+            title: Text(item['nama_produk'], style: const TextStyle(fontSize: 14)),
+            subtitle: Text("${item['quantity']} pcs"),
+            trailing: Text(_formatRp(item['subtotal']), style: const TextStyle(fontWeight: FontWeight.bold)),
+          );
+        }).toList(),
       ),
     );
   }
