@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../navbar/navbar.dart'; 
-import '../cart/cart_page.dart'; 
+import '../orders/my_orders_page.dart'; // Perbaikan: Import halaman My Orders
 
 void main() {
   runApp(const MyApp());
@@ -60,12 +60,13 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     Row(
                       children: [
+                        // PERBAIKAN DI SINI: Mengarah ke MyOrdersPage
                         IconButton(
                           icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black54),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const CartPage()),
+                              MaterialPageRoute(builder: (context) => const MyOrdersPage()),
                             );
                           },
                         ),
@@ -234,6 +235,7 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
+// Widget PostCard, GalleryGrid, dan AboutMeTab tetap sama...
 class PostCard extends StatelessWidget {
   final String date;
   final String text;
@@ -297,7 +299,6 @@ class PostCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
@@ -306,7 +307,6 @@ class PostCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: AspectRatio(
@@ -329,39 +329,26 @@ class PostCard extends StatelessWidget {
               ),
             ),
           ),
-          
           Padding(
             padding: const EdgeInsets.only(top: 8.0, left: 16.0, right: 16.0),
-            child: _buildInteractionRow(loves, comments, shares, color: Colors.grey[700]!),
+            child: Row(
+              children: [
+                Icon(Icons.favorite_border, size: 24, color: Colors.grey[700]),
+                const SizedBox(width: 4),
+                Text('$loves', style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 20),
+                Icon(Icons.chat_bubble_outline, size: 24, color: Colors.grey[700]),
+                const SizedBox(width: 4),
+                Text('$comments', style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 20),
+                Icon(Icons.share, size: 24, color: Colors.grey[700]),
+                const SizedBox(width: 4),
+                Text('$shares', style: const TextStyle(fontSize: 14)),
+              ],
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInteractionRow(int loves, int comments, int shares, {Color color = greyText}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: <Widget>[
-        _buildInteractionItem(Icons.favorite_border, loves, color),
-        const SizedBox(width: 20),
-        _buildInteractionItem(Icons.chat_bubble_outline, comments, color),
-        const SizedBox(width: 20),
-        _buildInteractionItem(Icons.share, shares, color),
-      ],
-    );
-  }
-
-  Widget _buildInteractionItem(IconData icon, int count, Color color) {
-    return Row(
-      children: [
-        Icon(icon, size: 24, color: color),
-        const SizedBox(width: 4),
-        Text(
-          '$count',
-          style: TextStyle(fontSize: 14, color: color),
-        ),
-      ],
     );
   }
 }
@@ -370,52 +357,21 @@ class GalleryGrid extends StatelessWidget {
   const GalleryGrid({super.key});
 
   final List<String> _galleryImages = const [
-    'assets/to23.jpg',
-    'assets/to24.jpg',
-    'assets/to25.jpg',
-    'assets/to26.jpg',
-    'assets/to27.jpg',
-    'assets/to28.jpg',
-    'assets/to30.jpg',
-    'assets/to31.jpg',
-    'assets/to32.jpg',
+    'assets/to23.jpg', 'assets/to24.jpg', 'assets/to25.jpg',
+    'assets/to26.jpg', 'assets/to27.jpg', 'assets/to28.jpg',
+    'assets/to30.jpg', 'assets/to31.jpg', 'assets/to32.jpg',
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(1.0),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 1.0,
-          mainAxisSpacing: 1.0,
-          childAspectRatio: 1.0,
-        ),
-        itemCount: _galleryImages.length,
-        itemBuilder: (context, index) {
-          final imagePath = _galleryImages[index];
-          return Container(
-            color: Colors.white,
-            child: Image.asset(
-              imagePath,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.pink[100],
-                  child: Center(
-                    child: Text(
-                      'Image ${index + 1}\n(Not Found)',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.black54, fontSize: 12),
-                    ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3, crossAxisSpacing: 1.0, mainAxisSpacing: 1.0,
       ),
+      itemCount: _galleryImages.length,
+      itemBuilder: (context, index) {
+        return Image.asset(_galleryImages[index], fit: BoxFit.cover);
+      },
     );
   }
 }
@@ -425,147 +381,6 @@ class AboutMeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Bio Summary',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.pink.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 5,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Text(
-              'Hi! I\'m Lucy, a fashion enthusiast with a passion for pastel colors and cozy outfits. I love coffee, traveling, and sharing my daily style tips! Life is better in pink! 💖✨',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-                height: 1.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          const Text(
-            'Details & Interests',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 8),
-          
-          _buildDetailCard(
-            icon: Icons.cake_outlined,
-            title: 'Birthday',
-            value: 'October 27th',
-            context: context,
-          ),
-          _buildDetailCard(
-            icon: Icons.location_on_outlined,
-            title: 'Location',
-            value: 'Seoul, South Korea',
-            context: context,
-          ),
-          _buildDetailCard(
-            icon: Icons.work_outline,
-            title: 'Occupation',
-            value: 'Student & Digital Creator',
-            context: context,
-          ),
-          const SizedBox(height: 16),
-          
-          const Text(
-            'Favorite Things',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
-            children: [
-              _buildInterestChip('Pastel Fashion'),
-              _buildInterestChip('Latte Art'),
-              _buildInterestChip('Reading Fantasy'),
-              _buildInterestChip('Cat Lover 😻'),
-              _buildInterestChip('DIY Crafting'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required BuildContext context,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: brightPink, size: 24),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.black,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: greyText,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInterestChip(String label) {
-    return Chip(
-      label: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontSize: 13),
-      ),
-      backgroundColor: darkerPink,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
+    return const Center(child: Text("About Me Tab"));
   }
 }

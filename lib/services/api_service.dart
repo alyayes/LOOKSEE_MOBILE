@@ -358,16 +358,18 @@ class ApiService {
   // Ambil List Pesanan
   Future<List<dynamic>> getOrders() async {
     try {
+      // Ganti /list-orders menjadi /orders sesuai route middleware kamu
       final response = await http.get(
-        Uri.parse('$baseUrl/list-orders'), // Pastikan di api.php namanya list-orders
+        Uri.parse('$baseUrl/orders'), 
         headers: _getHeaders(),
       );
       
-      print("DEBUG: Status Code Orders: ${response.statusCode}");
-      print("DEBUG: Response Body: ${response.body}");
+      print("DEBUG ORDERS STATUS: ${response.statusCode}");
+      print("DEBUG ORDERS BODY: ${response.body}");
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
+        // ApiOrderController kirim ['success' => true, 'data' => $orders]
         return data['data'] ?? [];
       }
       return [];
@@ -380,15 +382,40 @@ class ApiService {
   // Ambil Detail Pesanan
   Future<Map<String, dynamic>?> getOrderDetail(String id) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/order-details/$id'), headers: _getHeaders());
-      return response.statusCode == 200 ? json.decode(response.body)['data'] : null;
-    } catch (e) { return null; }
+      // Gunakan route /orders/{id} sesuai api.php
+      final response = await http.get(
+        Uri.parse('$baseUrl/orders/$id'), 
+        headers: _getHeaders()
+      );
+
+      print("DEBUG DETAIL STATUS: ${response.statusCode}");
+      
+      if (response.statusCode == 200) {
+        // ApiOrderController kirim ['status' => 'success', 'data' => $data]
+        return json.decode(response.body)['data'];
+      }
+      return null;
+    } catch (e) {
+      print("Error Detail Order: $e");
+      return null;
+    }
   }
 
-  Future<dynamic> getPaymentDetails() async {
-    final response = await http.get(Uri.parse('$baseUrl/payment/details'), headers: _getHeaders());
-    if (response.statusCode == 200) return json.decode(response.body);
-    return null;
+  Future<Map<String, dynamic>?> getPaymentDetails(String orderId) async {
+    try {
+      // Gunakan route /payment/details?order_id=...
+      final response = await http.get(
+        Uri.parse('$baseUrl/payment/details?order_id=$orderId'), 
+        headers: _getHeaders()
+      );
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 
   // ===============================================================
