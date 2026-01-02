@@ -301,16 +301,9 @@ class ApiService {
           'ewallet_id': ewallet_id,
         }),
       );
-
-      print("LOG CHECKOUT - Body: ${response.body}");
-      
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return json.decode(response.body);
-      }
-      return json.decode(response.body); 
+      return json.decode(response.body); // Langsung kembalikan Map agar error message tampil di UI
     } catch (e) {
-      print("Error Catch Checkout: $e");
-      return null;
+      return {'status': 'error', 'message': 'Kesalahan koneksi: $e'};
     }
   }
 
@@ -328,23 +321,16 @@ class ApiService {
     }
   }
 
-  // Cari fungsi updateAddress di api_service.dart dan ubah menjadi:
   Future<bool> updateAddress(String id, Map<String, dynamic> data) async {
     try {
-      // Kita pakai POST tapi kasih tahu Laravel ini adalah PUT melalui Query Parameter
-      // Ini cara paling ampuh di Flutter agar Laravel tidak bingung
       final response = await http.post(
-        Uri.parse('$baseUrl/checkout/update-address/$id?_method=PUT'),
+        Uri.parse('$baseUrl/checkout/update-address/$id?_method=PUT'), // Method Spoofing Laravel
         headers: _getHeaders(),
         body: jsonEncode(data),
       );
-
-      print("Edit Status: ${response.statusCode}");
-      print("Edit Response: ${response.body}");
-
-      return response.statusCode == 200 || response.statusCode == 201;
+      print("Update Address Status: ${response.statusCode}");
+      return response.statusCode == 200;
     } catch (e) {
-      print("Error Update Address: $e");
       return false;
     }
   }
