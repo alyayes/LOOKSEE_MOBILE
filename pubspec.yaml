@@ -74,7 +74,7 @@ flutter:
     - assets/gif/
     - assets/styleJournal/
     - assets/produk-looksee/
-    - assets/todays outfit/
+    - assets/todays_outfit/
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

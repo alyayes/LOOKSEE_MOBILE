@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../navbar/navbar.dart';
 
-
 // ================= API SERVICE =================
 class ApiService {
   static const String baseUrl = "http://10.0.2.2:8000/api";
@@ -13,8 +12,7 @@ class ApiService {
         endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
 
     final url = Uri.parse('$baseUrl/$cleanEndpoint');
-    final response =
-        await http.get(url).timeout(const Duration(seconds: 15));
+    final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> decoded = json.decode(response.body);
@@ -22,28 +20,6 @@ class ApiService {
     } else {
       throw Exception("Gagal memuat data");
     }
-  }
-}
-
-// ================= MAIN =================
-void main() {
-  runApp(const TodaysOutfitApp());
-}
-
-class TodaysOutfitApp extends StatelessWidget {
-  const TodaysOutfitApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Todays Outfit',
-      theme: ThemeData(
-        primarySwatch: Colors.pink,
-        scaffoldBackgroundColor: Colors.white,
-      ),
-      home: const TodaysOutfitScreen(),
-    );
   }
 }
 
@@ -95,11 +71,8 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
     );
   }
 
-  // ================= CARD ITEM =================
+  // ================= CARD =================
   Widget _buildOutfitItem(Map<String, dynamic> item) {
-    final imageUrl =
-        "http://10.0.2.2:8000/storage/posts/${item['image_post']}";
-
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(
@@ -109,15 +82,14 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
         padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            // IMAGE
+            // IMAGE (ASSET)
             AspectRatio(
               aspectRatio: 3 / 4,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  imageUrl,
+                child: Image.asset(
+                  'assets/todays_outfit/${item['image_post']}',
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: Colors.grey[200],
@@ -129,7 +101,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
 
             const SizedBox(height: 8),
 
-            // TITLE
             Text(
               item['caption'] ?? 'No Title',
               maxLines: 1,
@@ -142,7 +113,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
 
             const SizedBox(height: 6),
 
-            // USER + MOOD
             Row(
               children: [
                 CircleAvatar(
@@ -198,6 +168,7 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
         }
 
         final items = snapshot.data!;
+
         return GridView.builder(
           padding: const EdgeInsets.all(16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -208,18 +179,7 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
           ),
           itemCount: items.length,
           itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        OutfitDetailPage(item: items[index]),
-                  ),
-                );
-              },
-              child: _buildOutfitItem(items[index]),
-            );
+            return _buildOutfitItem(items[index]);
           },
         );
       },
@@ -260,49 +220,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
         ],
       ),
       bottomNavigationBar: const CustomNavBar(currentIndex: 1),
-    );
-  }
-}
-
-// ================= DETAIL PAGE =================
-class OutfitDetailPage extends StatelessWidget {
-  final Map<String, dynamic> item;
-  const OutfitDetailPage({super.key, required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final imageUrl =
-        "http://10.0.2.2:8000/storage/posts/${item['image_post']}";
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Detail Outfit')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(imageUrl),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              item['caption'] ?? '-',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Diposting oleh: ${item['user'] != null ? item['user']['name'] : 'Anonymous'}',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 10),
-            Text('Mood: ${item['mood'] ?? '-'}'),
-          ],
-        ),
-      ),
     );
   }
 }

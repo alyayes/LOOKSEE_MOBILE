@@ -11,6 +11,7 @@ import 'checkout/checkout_page.dart';
 import 'orders/my_orders_page.dart';
 import 'payment/payment_details_page.dart';
 import './todaysOutfit/todays_outfit.dart';
+import 'styleJournal/style_journal.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         '/my-orders': (context) => const MyOrdersPage(),
         '/payment-details': (context) => const PaymentDetailsPage(),
         '/todaysoutfit': (context) => const TodaysOutfitApp(),
+        '/style-journal': (context) => const StyleJournalScreen(),
 
       },
     );

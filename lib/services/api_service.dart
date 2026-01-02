@@ -258,6 +258,31 @@ class ApiService {
   }
 
   // ===============================================================
+  // 9. STYLE JOURNAL
+  // ===============================================================
+
+  Future<List<dynamic>> getStyleJournals({int perPage = 6}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/style-journals?per_page=$perPage'),
+        headers: _getHeaders(),
+      );
+
+      print("STYLE JOURNAL RESPONSE: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        return jsonResponse['data'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      print("Error getStyleJournals: $e");
+      return [];
+    }
+  }
+
+
+  // ===============================================================
   // 6. CHECKOUT & ADDRESS
   // ===============================================================
 
@@ -427,3 +452,5 @@ class ApiService {
     }
   }
 }
+
+
