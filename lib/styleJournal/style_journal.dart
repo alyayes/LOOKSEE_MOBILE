@@ -28,7 +28,7 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
   // FETCH DATA DARI LARAVEL API
   // ===============================
   Future<void> fetchStyleJournals() async {
-    final url = Uri.parse('http://10.0.2.2:8000/api/stylejournals');
+    final url = Uri.parse('http://10.128.83.120:8001/api/stylejournals');
 
     try {
       final response = await http.get(url);
@@ -154,7 +154,7 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
                     return HoverFashionCard(
                       
                       imagePath: item['image'] != null
-                          ? 'http://10.0.2.2:8000/storage/${item['image']}'
+                          ? 'http://10.128.83.120:8001/storage/${item['image']}'
                           : '',
                       title: item['title'],
                       content: item['content'],

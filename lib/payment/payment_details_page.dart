@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 
 class PaymentDetailsPage extends StatefulWidget {
-  final Map<String, dynamic> orderData; // Tambahkan parameter untuk menerima data order
+  final Map<String, dynamic> orderData;
   const PaymentDetailsPage({super.key, required this.orderData});
 
   @override
@@ -36,76 +36,61 @@ class _PaymentDetailsPageState extends State<PaymentDetailsPage> {
     super.dispose();
   }
 
-  String _formatDuration(Duration duration) {
+  String _formatDuration(Duration d) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-    return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
-  }
-
-  void _copyToClipboard(String code) {
-    Clipboard.setData(ClipboardData(text: code)).then((_) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Payment Code Copied!"), backgroundColor: Color(0xFFFF69B4)));
-    });
+    return "${twoDigits(d.inHours)}:${twoDigits(d.inMinutes.remainder(60))}:${twoDigits(d.inSeconds.remainder(60))}";
   }
 
   @override
   Widget build(BuildContext context) {
-    const pink = Color(0xFFFF69B4);
-    // Ambil data payment dari map orderData
+    final pink = const Color(0xFFFF69B4);
     final payment = widget.orderData['payment'] ?? {};
     final String trxCode = payment['transaction_code'] ?? "N/A";
     final String method = widget.orderData['payment_method'] ?? "Transfer";
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
-      appBar: AppBar(title: const Text("Payment Details", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)), centerTitle: true, elevation: 0, backgroundColor: Colors.white),
+      appBar: AppBar(title: const Text("Payment Details"), centerTitle: true, elevation: 0, backgroundColor: Colors.white),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             Container(
-              margin: const EdgeInsets.only(bottom: 20),
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
               decoration: BoxDecoration(color: const Color(0xFFFFE0B2), borderRadius: BorderRadius.circular(30)),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.timer_outlined, color: Colors.deepOrange, size: 20),
-                  const SizedBox(width: 8),
-                  Text("Complete payment in ${_formatDuration(_timeLeft)}", style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
-                ],
-              ),
+              child: Text("Complete payment in ${_formatDuration(_timeLeft)}", 
+                style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
             ),
+            const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
               child: Column(
                 children: [
-                  _row("Status", "Waiting for Payment", isPink: true),
-                  const Divider(height: 30),
                   _row("Order ID", "#${widget.orderData['order_id']}"),
-                  const SizedBox(height: 12),
+                  const Divider(),
                   _row("Payment Method", method),
                   const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(12)),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Payment Code", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                        Row(children: [
-                          Text(trxCode, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          IconButton(onPressed: () => _copyToClipboard(trxCode), icon: const Icon(Icons.copy, size: 18, color: pink))
-                        ])
-                      ],
-                    ),
+                  const Text("Payment Code", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(trxCode, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      IconButton(
+                        icon: Icon(Icons.copy, color: pink, size: 20),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: trxCode));
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Code Copied!")));
+                        },
+                      )
+                    ],
                   ),
-                  const Divider(height: 30),
-                  _row("Total Amount", "Rp ${widget.orderData['grand_total']}", isBold: true, fontSize: 18),
+                  const Divider(height: 40),
+                  _row("Total Payment", "Rp ${widget.orderData['grand_total']}", isPink: true),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             _buildInstructions(method),
           ],
         ),
@@ -129,21 +114,21 @@ class _PaymentDetailsPageState extends State<PaymentDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("How to pay via $method", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text("How to pay via $method", style: const TextStyle(fontWeight: FontWeight.bold)),
             const Divider(height: 20),
-            const Text("1. Open your payment app\n2. Choose Transfer or Pay menu\n3. Enter the payment code provided above\n4. Ensure the amount matches exactly\n5. Confirm and complete your transaction"),
+            const Text("1. Open your payment/banking application.\n2. Select the Transfer/Payment menu.\n3. Enter the payment code above.\n4. Input the exact total amount.\n5. Keep your receipt until verification is complete."),
           ],
         ),
       ),
     );
   }
 
-  Widget _row(String label, String val, {bool isPink = false, bool isBold = false, double fontSize = 14}) {
+  Widget _row(String label, String val, {bool isPink = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.grey)),
-        Text(val, style: TextStyle(fontWeight: isBold || isPink ? FontWeight.bold : FontWeight.normal, fontSize: fontSize, color: isPink ? const Color(0xFFFF69B4) : Colors.black)),
+        Text(val, style: TextStyle(fontWeight: FontWeight.bold, color: isPink ? const Color(0xFFFF69B4) : Colors.black, fontSize: isPink ? 18 : 14)),
       ],
     );
   }

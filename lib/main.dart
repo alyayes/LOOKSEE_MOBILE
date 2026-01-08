@@ -9,7 +9,8 @@ import 'landing/landing_page.dart';
 import 'cart/cart_page.dart';
 import 'orders/my_orders_page.dart';
 import 'payment/payment_details_page.dart';
-import './todaysOutfit/todays_outfit.dart';
+import 'todaysOutfit/todays_outfit.dart';
+import 'styleJournal/style_journal.dart';
 
 void main() {
   runApp(const MyApp());
@@ -42,7 +43,8 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
           return PaymentDetailsPage(orderData: args);
         },
-        '/todaysoutfit': (context) => const TodaysOutfitApp(),
+        '/todaysoutfit': (context) => const TodaysOutfitScreen(),
+        'style-journal':(context) => const StyleJournalScreen()
 
       },
     );
