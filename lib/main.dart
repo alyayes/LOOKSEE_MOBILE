@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
         '/cart': (context) => const CartPage(),
         '/my-orders': (context) => const MyOrdersPage(),
         '/payment-details': (context) => const PaymentDetailsPage(),
-        '/todaysoutfit': (context) => const TodaysOutfitApp(),
+        '/todaysoutfit': (context) => const TodaysOutfitScreen(),
         '/style-journal': (context) => const StyleJournalScreen(),
 
       },
