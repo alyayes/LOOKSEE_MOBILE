@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../navbar/navbar.dart';
@@ -11,9 +12,8 @@ class StyleJournalScreen extends StatefulWidget {
 }
 
 class _StyleJournalScreenState extends State<StyleJournalScreen> {
-  final StyleJournalService _service = StyleJournalService();
-
-  late Future<List<StyleJournal>> _journalsFuture;
+  List<dynamic> journalData = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -239,25 +239,9 @@ class _HoverFashionCardState extends State<HoverFashionCard> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 30),
-
-                // ================= LIST =================
-                ...data.map((item) {
-                  final imageUrl = item.image != null
-                      ? 'http://10.0.2.2:8000/storage/${item.image}'
-                      : '';
-
-                  return HoverFashionCard(
-                    id: item.id,
-                    imagePath: imageUrl,
-                    title: item.title,
-                  );
-                }).toList(),
-
-                const SizedBox(height: 120),
               ],
-            );
-          },
+            ),
+          ),
         ),
       ),
     );

@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import '../services/style_journal_service.dart';
-import '../models/style_journal_model.dart';
 
 class DetailStyleJournal extends StatelessWidget {
-  final int journalId;
+  final String imagePath;
+  final String title;
+  final String content;
+  final String date;
 
   const DetailStyleJournal({
     super.key,
-    required this.journalId,
+    required this.imagePath,
+    required this.title,
+    required this.content,
+    required this.date,
   });
 
   @override
@@ -15,8 +19,16 @@ class DetailStyleJournal extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Style Journal'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         centerTitle: true,
+        title: const Text(
+          "Style Journal",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -32,32 +44,7 @@ class DetailStyleJournal extends StatelessWidget {
                   color: Colors.grey[200],
                   child: const Icon(Icons.image, size: 60),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        item.formattedDate,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        item.content,
-                        style: const TextStyle(fontSize: 16, height: 1.6),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 20),
             Padding(
