@@ -1,625 +1,471 @@
 import 'package:flutter/material.dart';
-import '../payment/payment_details_page.dart';
+import 'package:intl/intl.dart';
 import '../orders/my_orders_page.dart';
-
-// MODEL DATA ALAMAT
-class Address {
-  String id;
-  String name;
-  String phone;
-  String fullAddress;
-  bool isDefault;
-
-  Address({
-    required this.id,
-    required this.name,
-    required this.phone,
-    required this.fullAddress,
-    this.isDefault = false,
-  });
-}
+import '../services/api_service.dart';
 
 class CheckoutPage extends StatefulWidget {
-  const CheckoutPage({super.key});
+  final List<dynamic> selectedItems;
+  const CheckoutPage({super.key, required this.selectedItems});
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
-  // STATE PAYMENT
-  int _selectedCategory = 2; 
-  String _selectedProvider = "COD"; 
-  final List<String> _banks = ["Mandiri", "BCA", "BRI", "BNI"];
-  final List<String> _ewallets = ["GoPay", "ShopeePay", "OVO"];
-
-  // STATE ADDRESS (Data Dummy)
-  final List<Address> _addresses = [
-    Address(
-      id: '1',
-      name: "Lucy Maudy",
-      phone: "087654321898",
-      fullAddress: "Jl. Raya Panjang Pisan, Kab. Kokoyashi, Provinsi Lea Loloya",
-      isDefault: true,
-    ),
-    Address(
-      id: '2',
-      name: "Lucy Kantor",
-      phone: "081234567890",
-      fullAddress: "Gedung Cyber 2, Jl. HR Rasuna Said, Jakarta Selatan",
-      isDefault: false,
-    ),
-  ];
+  List<dynamic> _addresses = [];
+  List<dynamic> _bankOptions = [];
+  List<dynamic> _ewalletOptions = [];
+  List<dynamic> _realProducts = [];
+  Map<String, dynamic>? _summary;
 
   int _selectedAddressIndex = 0;
+  String _selectedMethodName = "COD";
+  dynamic _selectedSubOption;
 
-  // --- LOGIC MODAL SUKSES ORDER (UPDATED WITH GIF) ---
-  void _showOrderSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // User tidak bisa tutup sembarangan
-      barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                
-                // === GAMBAR GIF SUKSES ===
-                SizedBox(
-                  height: 120,
-                  width: 120,
-                  child: Image.asset(
-                    'assets/sukses regis.gif', 
-                    fit: BoxFit.contain,
-                    // Error builder jaga-jaga kalau gif gak ketemu
-                    errorBuilder: (context, error, stackTrace) => 
-                      const Icon(Icons.check_circle, size: 80, color: Colors.green),
-                  ),
-                ),
-                // =========================
+  bool _isLoading = true;
+  bool _isProcessing = false;
 
-                const SizedBox(height: 10),
-                
-                // Judul
-                const Text(
-                  "Order Placed Successfully!",
-                  style: TextStyle(
-                    fontSize: 20, 
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                
-                // Deskripsi
-                const Text(
-                  "Your order #52 has been processed. Please complete the payment to proceed with shipping.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, fontSize: 14, height: 1.5),
-                ),
-                const SizedBox(height: 30),
-
-                // TOMBOL 1: PAY NOW (Ke Payment Details)
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Tutup dialog
-                      Navigator.push(
-                        context, 
-                        MaterialPageRoute(builder: (context) => const PaymentDetailsPage())
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF69B4),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    ),
-                    child: const Text("Pay Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
-
-                // TOMBOL 2: CHECK MY ORDERS (Ke My Orders)
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Tutup dialog
-                      Navigator.push(
-                        context, 
-                        MaterialPageRoute(builder: (context) => const MyOrdersPage())
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFFF69B4)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    ),
-                    child: const Text(
-                      "Check My Orders", 
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFFF69B4))
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  @override
+  void initState() {
+    super.initState();
+    _fetchCheckoutData();
   }
 
-  // --- LOGIC ALAMAT ---
-  void _showAddressModal() {
+  void _fetchCheckoutData() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      String productIds = widget.selectedItems.map((e) => e['product_id']).join(',');
+      final response = await ApiService().getCheckoutSummary(productIds);
+
+      if (response != null && response['status'] == 'success') {
+        final d = response['data'];
+        setState(() {
+          _addresses = d['addresses'] ?? [];
+          _summary = d['summary'];
+          _realProducts = d['items'] ?? [];
+          _bankOptions = d['payment_options']['banks'] ?? [];
+          _ewalletOptions = d['payment_options']['ewallets'] ?? [];
+          
+          _selectedAddressIndex = _addresses.indexWhere((a) => a['is_default'] == 1);
+          if (_selectedAddressIndex == -1) _selectedAddressIndex = 0;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showAddressSelectionModal() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.7,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Select Address", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
-                    ],
-                  ),
-                  const Divider(),
-                  Expanded(
-                    child: _addresses.isEmpty 
-                    ? const Center(child: Text("No address yet."))
-                    : ListView.builder(
-                        itemCount: _addresses.length,
-                        itemBuilder: (context, index) {
-                          final address = _addresses[index];
-                          bool isSelected = index == _selectedAddressIndex;
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFFFFF0F5) : Colors.white,
-                              border: Border.all(color: isSelected ? const Color(0xFFFF69B4) : Colors.grey.shade300),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                setState(() { _selectedAddressIndex = index; });
-                                Navigator.pop(context);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(address.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        const SizedBox(width: 8),
-                                        Text("| ${address.phone}", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                                        const Spacer(),
-                                        if (isSelected) const Icon(Icons.check_circle, color: Color(0xFFFF69B4), size: 20),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(address.fullAddress, style: TextStyle(color: Colors.grey[800], fontSize: 13)),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        TextButton.icon(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                            _showAddressForm(existingAddress: address, index: index);
-                                          },
-                                          icon: const Icon(Icons.edit, size: 16, color: Colors.blue),
-                                          label: const Text("Edit", style: TextStyle(color: Colors.blue, fontSize: 12)),
-                                        ),
-                                        TextButton.icon(
-                                          onPressed: () {
-                                            if (_addresses.length > 1) {
-                                              setModalState(() {
-                                                _addresses.removeAt(index);
-                                                if (_selectedAddressIndex >= index) _selectedAddressIndex = 0;
-                                              });
-                                              setState(() {});
-                                            } else {
-                                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Cannot delete the last address")));
-                                            }
-                                          },
-                                          icon: const Icon(Icons.delete, size: 16, color: Colors.red),
-                                          label: const Text("Delete", style: TextStyle(color: Colors.red, fontSize: 12)),
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showAddressForm();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFFF69B4)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      ),
-                      child: const Text("Add New Address", style: TextStyle(color: Color(0xFFFF69B4))),
-                    ),
-                  )
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showAddressForm({Address? existingAddress, int? index}) {
-    final nameCtrl = TextEditingController(text: existingAddress?.name ?? "");
-    final phoneCtrl = TextEditingController(text: existingAddress?.phone ?? "");
-    final addressCtrl = TextEditingController(text: existingAddress?.fullAddress ?? "");
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(existingAddress == null ? "Add Address" : "Edit Address"),
-          content: SingleChildScrollView(
+        return StatefulBuilder(builder: (context, setModalState) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            height: MediaQuery.of(context).size.height * 0.75,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Full Name")),
-                TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: "Phone Number"), keyboardType: TextInputType.phone),
-                TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: "Full Address"), maxLines: 3),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF69B4), foregroundColor: Colors.white),
-              onPressed: () {
-                if (nameCtrl.text.isNotEmpty && addressCtrl.text.isNotEmpty) {
-                  setState(() {
-                    if (existingAddress == null) {
-                      _addresses.add(Address(
-                        id: DateTime.now().toString(),
-                        name: nameCtrl.text,
-                        phone: phoneCtrl.text,
-                        fullAddress: addressCtrl.text,
-                      ));
-                    } else {
-                      _addresses[index!] = Address(
-                        id: existingAddress.id,
-                        name: nameCtrl.text,
-                        phone: phoneCtrl.text,
-                        fullAddress: addressCtrl.text,
-                        isDefault: existingAddress.isDefault,
-                      );
-                    }
-                  });
-                  Navigator.pop(context);
-                  _showAddressModal();
-                }
-              },
-              child: const Text("Save"),
-            )
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final currentAddress = _addresses.isNotEmpty ? _addresses[_selectedAddressIndex] : null;
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      appBar: AppBar(
-        title: const Text("Checkout", style: TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        leading: const BackButton(color: Colors.black),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // === 1. ADDRESS SECTION ===
-            const Text("Address", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            InkWell(
-              onTap: _showAddressModal,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))],
-                ),
-                child: currentAddress != null 
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(currentAddress.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          const SizedBox(width: 10),
-                          Text(currentAddress.phone, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                          const Spacer(),
-                          const Text("Change", style: TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold, fontSize: 12)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(currentAddress.fullAddress, style: TextStyle(color: Colors.grey[600], fontSize: 13, height: 1.4)),
-                    ],
-                  )
-                : const Center(child: Text("Please add an address")),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // === 2. SHIPPING METHOD ===
-            const Text("Shipping Method", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))],
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.radio_button_checked, color: Color(0xFFFF69B4), size: 24),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.local_shipping_outlined, color: Color(0xFFFF69B4), size: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RichText(
-                          text: const TextSpan(
-                            style: TextStyle(color: Colors.black, fontSize: 14),
-                            children: [
-                              TextSpan(text: "Regular Shipping  ", style: TextStyle(fontWeight: FontWeight.bold)),
-                              TextSpan(text: "Rp 0", style: TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text("Estimated Delivery: 3-5 business days.", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // === 3. PRODUCTS ===
-            const Text("Products (3 items)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Column(
-                children: [
-                  // --- PASTIKAN NAMA FILE SAMA DENGAN DI ASSETS ---
-                  // Jika kamu sudah rename jadi pakai underscore (_), ganti nama di sini ya!
-                  // Contoh: 'assets/luxe_cardi.jpg'
-                  _buildProductItem("Luxe Cardy", "S", "Rp249.900", 'assets/luxe cardi.jpg'),
-                  const Divider(height: 1),
-                  _buildProductItem("Sunny Top", "L", "Rp175.900", 'assets/sunny top.jpg'),
-                  const Divider(height: 1),
-                  _buildProductItem("Sweet Shirt", "M", "Rp247.000", 'assets/sweet shirt.png'),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // === 4. PAYMENT METHOD ===
-            const Text("Payment Method", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            _buildMainPaymentOption(index: 0, title: "Bank Transfer", subOptions: _banks),
-            const SizedBox(height: 10),
-            _buildMainPaymentOption(index: 1, title: "E-Wallet", subOptions: _ewallets),
-            const SizedBox(height: 10),
-            _buildMainPaymentOption(index: 2, title: "COD (Cash on Delivery)", subOptions: []),
-            
-            const SizedBox(height: 100),
-          ],
-        ),
-      ),
-
-      // === 5. BOTTOM BAR ===
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text("Total Price", style: TextStyle(color: Color(0xFFFF69B4), fontSize: 12)),
-                Text("Rp672.800", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _showOrderSuccessDialog(); // PANGGIL DIALOG DENGAN GIF
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF69B4),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                elevation: 0,
-              ),
-              child: const Text("Place Order", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // --- WIDGET HELPER ---
-
-  Widget _buildMainPaymentOption({required int index, required String title, required List<String> subOptions}) {
-    bool isCategorySelected = _selectedCategory == index;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCategorySelected ? const Color(0xFFFF69B4) : Colors.grey.shade200,
-          width: isCategorySelected ? 1.5 : 1
-        ),
-      ),
-      child: Column(
-        children: [
-          ListTile(
-            onTap: () {
-              setState(() {
-                _selectedCategory = index;
-                if (subOptions.isNotEmpty) _selectedProvider = subOptions[0];
-                else _selectedProvider = title;
-              });
-            },
-            leading: Icon(
-              isCategorySelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: isCategorySelected ? const Color(0xFFFF69B4) : Colors.grey,
-            ),
-            title: Text(title, style: TextStyle(fontWeight: isCategorySelected ? FontWeight.bold : FontWeight.w500)),
-          ),
-          if (isCategorySelected && subOptions.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-              child: Column(
-                children: subOptions.map((option) => _buildSubOption(option)).toList(),
-              ),
-            )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubOption(String optionName) {
-    bool isSelected = _selectedProvider == optionName;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedProvider = optionName),
-      child: Container(
-        margin: const EdgeInsets.only(top: 8),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFFF0F5) : Colors.grey[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: isSelected ? const Color(0xFFFF69B4) : Colors.transparent),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.account_balance_wallet, size: 18, color: isSelected ? const Color(0xFFFF69B4) : Colors.grey),
-            const SizedBox(width: 12),
-            Text(optionName, style: TextStyle(fontSize: 14, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? const Color(0xFFFF69B4) : Colors.black87)),
-            const Spacer(),
-            if (isSelected) const Icon(Icons.check_circle, size: 18, color: Color(0xFFFF69B4)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProductItem(String title, String size, String price, String imgUrl) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            // DIGANTI JADI ASSET + ERROR BUILDER
-            child: Image.asset(
-              imgUrl, 
-              width: 70, 
-              height: 70, 
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 70, 
-                  height: 70, 
-                  color: Colors.grey[200], 
-                  child: const Icon(Icons.broken_image, size: 30, color: Colors.grey)
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                const SizedBox(height: 4),
-                Text("Size: $size", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(price, style: const TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold, fontSize: 15)),
-                    Text("1 pcs", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                    const Text("Select Shipping Address", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
                   ],
+                ),
+                const Divider(),
+                Expanded(
+                  child: _addresses.isEmpty
+                      ? _emptyAddressState()
+                      : ListView.builder(
+                          itemCount: _addresses.length,
+                          itemBuilder: (context, index) {
+                            final addr = _addresses[index];
+                            bool isSelected = _selectedAddressIndex == index;
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(color: isSelected ? const Color(0xFFFF69B4) : Colors.grey.shade200),
+                              ),
+                              child: ListTile(
+                                onTap: () {
+                                  setState(() => _selectedAddressIndex = index);
+                                  Navigator.pop(context);
+                                },
+                                title: Text(addr['receiver_name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Text("${addr['phone_number']}\n${addr['full_address']}"),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
+                                      onPressed: () => _showAddressFormModal(existingData: addr),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                      onPressed: () async {
+                                        bool ok = await ApiService().deleteAddress(addr['id'].toString());
+                                        if (ok) {
+                                          _fetchCheckoutData();
+                                          setModalState(() => _addresses.removeAt(index));
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => _showAddressFormModal(),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF69B4), foregroundColor: Colors.white),
+                    child: const Text("Add New Address"),
+                  ),
                 )
               ],
             ),
+          );
+        });
+      },
+    );
+  }
+
+  void _showAddressFormModal({Map<String, dynamic>? existingData}) {
+    final bool isEdit = existingData != null;
+    final nameCtrl = TextEditingController(text: isEdit ? existingData['receiver_name'] : "");
+    final phoneCtrl = TextEditingController(text: isEdit ? existingData['phone_number'] : "");
+    final addrCtrl = TextEditingController(text: isEdit ? existingData['full_address'] : "");
+    final cityCtrl = TextEditingController(text: isEdit ? existingData['city'] : "");
+    final districtCtrl = TextEditingController(text: isEdit ? existingData['district'] : "");
+    final provinceCtrl = TextEditingController(text: isEdit ? existingData['province'] : "");
+    final zipCtrl = TextEditingController(text: isEdit ? existingData['postal_code'] : "");
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(isEdit ? "Edit Address" : "New Address"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Receiver Name*")),
+              TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: "Phone Number*"), keyboardType: TextInputType.phone),
+              TextField(controller: addrCtrl, decoration: const InputDecoration(labelText: "Full Address*")),
+              TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: "City*")),
+              TextField(controller: districtCtrl, decoration: const InputDecoration(labelText: "District*")), 
+              TextField(controller: provinceCtrl, decoration: const InputDecoration(labelText: "Province*")),
+              TextField(controller: zipCtrl, decoration: const InputDecoration(labelText: "Postal Code*"), keyboardType: TextInputType.number),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF69B4), foregroundColor: Colors.white),
+            onPressed: () async {
+              if (nameCtrl.text.isEmpty || phoneCtrl.text.isEmpty || addrCtrl.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Data tidak boleh kosong!")));
+                return;
+              }
+              final data = {
+                "receiver_name": nameCtrl.text,
+                "phone_number": phoneCtrl.text,
+                "full_address": addrCtrl.text,
+                "city": cityCtrl.text,
+                "district": districtCtrl.text,
+                "province": provinceCtrl.text,
+                "postal_code": zipCtrl.text,
+              };
+              Navigator.pop(context); 
+              setState(() => _isLoading = true);
+              bool ok = isEdit 
+                  ? await ApiService().updateAddress(existingData['id'].toString(), data)
+                  : await ApiService().addAddress(data);
+              if (ok) {
+                _fetchCheckoutData();
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Address saved successfully!")));
+              } else {
+                setState(() => _isLoading = false);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to save address.")));
+              }
+            },
+            child: const Text("Save"),
           )
         ],
       ),
     );
   }
+
+  Widget _emptyAddressState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.location_off_outlined, size: 60, color: Colors.grey[400]),
+        const SizedBox(height: 10),
+        const Text("No address saved yet.", style: TextStyle(color: Colors.grey)),
+      ],
+    );
+  }
+
+  void _handlePlaceOrder() async {
+    if (_addresses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tambahkan alamat dulu!")));
+      return;
+    }
+    if (_selectedMethodName != "COD" && _selectedSubOption == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pilih Bank atau E-Wallet!")));
+      return;
+    }
+    setState(() => _isProcessing = true);
+    String productIds = widget.selectedItems.map((e) => e['product_id']).join(',');
+    String currentAddrId = _addresses[_selectedAddressIndex]['id'].toString();
+
+    String? bankId = _selectedMethodName == "Bank Transfer" ? _selectedSubOption['bank_payment_id'].toString() : null;
+    String? ewalletId = _selectedMethodName == "E-Wallet" ? _selectedSubOption['e_wallet_payment_id'].toString() : null;
+
+    final result = await ApiService().processCheckout(
+      selectedProducts: productIds,
+      address_id: currentAddrId,
+      payment_method: _selectedMethodName,
+      bank_id: bankId,
+      ewallet_id: ewalletId,
+    );
+
+    setState(() => _isProcessing = false);
+    if (result != null && result['status'] == 'success') {
+      _showSuccessDialog(result['data']['order_id'].toString());
+    } else {
+      String msg = result?['message'] ?? "Checkout failed";
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+
+  void _showSuccessDialog(String orderId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle, size: 80, color: Colors.green),
+            const SizedBox(height: 10),
+            const Text("Order Placed!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 8),
+            Text("Order #$orderId is being processed."),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF69B4), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MyOrdersPage())),
+                child: const Text("Go to My Orders"),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatRp(num amount) => NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0).format(amount);
+
+  @override
+  Widget build(BuildContext context) {
+    const pink = Color(0xFFFF69B4);
+    final addr = _addresses.isNotEmpty ? _addresses[_selectedAddressIndex] : null;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAFAFA),
+      appBar: AppBar(title: const Text("Checkout", style: TextStyle(color: pink, fontWeight: FontWeight.bold)), centerTitle: true, backgroundColor: Colors.white, elevation: 0, leading: const BackButton(color: Colors.black)),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: pink))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Shipping Address", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  _buildAddressSection(addr, pink),
+                  const SizedBox(height: 24),
+                  const Text("Shipping Method", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  _buildShippingTile(pink),
+                  const SizedBox(height: 24),
+                  const Text("Products", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  _buildProductList(),
+                  const SizedBox(height: 24),
+                  const Text("Payment Method", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  _buildPaymentOptions(pink),
+                  const SizedBox(height: 120),
+                ],
+              ),
+            ),
+      bottomNavigationBar: _buildBottomBar(pink),
+    );
+  }
+
+  Widget _buildAddressSection(dynamic addr, Color pink) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _boxDecoration(),
+      child: addr == null
+          ? ElevatedButton.icon(onPressed: () => _showAddressFormModal(), icon: const Icon(Icons.add), label: const Text("Add Address"), style: ElevatedButton.styleFrom(backgroundColor: pink, foregroundColor: Colors.white))
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(addr['receiver_name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                    GestureDetector(onTap: _showAddressSelectionModal, child: Text("Change", style: TextStyle(color: pink, fontWeight: FontWeight.bold))),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(addr['phone_number'], style: TextStyle(color: Colors.grey[600])),
+                Text(addr['full_address'], style: const TextStyle(height: 1.4)),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildShippingTile(Color pink) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: _boxDecoration(),
+      child: Row(
+        children: [
+          Icon(Icons.local_shipping_outlined, color: pink),
+          const SizedBox(width: 12),
+          const Expanded(child: Text("Regular Shipping (3-5 Days)", style: TextStyle(fontWeight: FontWeight.bold))),
+          Text(_formatRp(_summary?['shipping_cost'] ?? 0), style: TextStyle(color: pink, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductList() {
+    return Container(
+      decoration: _boxDecoration(),
+      child: Column(
+        children: _realProducts.map((item) {
+          // LOGIC BARU: Ambil nama file saja dari URL yang dikirim server
+          String fullUrl = item['gambar_produk'] ?? '';
+          String fileName = fullUrl.split('/').last; 
+          // Gabungkan dengan path folder assets lokal kamu
+          String localPath = 'assets/produk-looksee/$fileName';
+
+          return ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              // GANTI ke Image.asset agar sinkron dengan CartPage
+              child: Image.asset(
+                localPath,
+                width: 45,
+                height: 45,
+                fit: BoxFit.cover,
+                // Jika file tidak ada di folder assets, tampilkan icon broken image
+                errorBuilder: (c, e, s) => Container(
+                  width: 45,
+                  height: 45,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.broken_image, size: 20, color: Colors.grey),
+                ),
+              ),
+            ),
+            title: Text(item['nama_produk'], style: const TextStyle(fontSize: 14)),
+            subtitle: Text("${item['quantity']} pcs"),
+            trailing: Text(_formatRp(item['subtotal']), style: const TextStyle(fontWeight: FontWeight.bold)),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildPaymentOptions(Color pink) {
+    return Column(
+      children: [
+        _methodTile("COD", "COD (Cash on Delivery)", Icons.money, pink),
+        _methodTile("Bank Transfer", "Bank Transfer", Icons.account_balance, pink, options: _bankOptions),
+        _methodTile("E-Wallet", "E-Wallet", Icons.account_balance_wallet, pink, options: _ewalletOptions),
+      ],
+    );
+  }
+
+  Widget _methodTile(String key, String title, IconData icon, Color pink, {List<dynamic>? options}) {
+    bool isSelected = _selectedMethodName == key;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isSelected ? pink : Colors.grey.shade200)),
+      child: Column(
+        children: [
+          ListTile(
+            onTap: () => setState(() { _selectedMethodName = key; _selectedSubOption = null; }),
+            leading: Icon(icon, color: isSelected ? pink : Colors.grey),
+            title: Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+            trailing: Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off, color: isSelected ? pink : Colors.grey),
+          ),
+          if (isSelected && options != null && options.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 12, right: 12, bottom: 12),
+              child: Wrap(
+                spacing: 8, runSpacing: 8,
+                children: options.map((opt) {
+                  final optId = opt['bank_payment_id'] ?? opt['e_wallet_payment_id'];
+                  final selId = _selectedSubOption?['bank_payment_id'] ?? _selectedSubOption?['e_wallet_payment_id'];
+                  bool isSub = optId == selId && selId != null;
+                  String displayName = opt['bank_name'] ?? opt['ewallet_provider_name'] ?? "Unknown";
+                  return ChoiceChip(
+                    label: Text(displayName),
+                    selected: isSub,
+                    onSelected: (val) => setState(() => _selectedSubOption = opt),
+                    selectedColor: pink.withOpacity(0.1),
+                    labelStyle: TextStyle(color: isSub ? pink : Colors.black, fontSize: 12),
+                  );
+                }).toList(),
+              ),
+            )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar(Color pink) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30)), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)]),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            const Text("Total Price", style: TextStyle(color: Colors.grey, fontSize: 12)),
+            Text(_formatRp(_summary?['grand_total'] ?? 0), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          ]),
+          ElevatedButton(
+            onPressed: _isProcessing ? null : _handlePlaceOrder,
+            style: ElevatedButton.styleFrom(backgroundColor: pink, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+            child: _isProcessing ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text("Place Order", style: TextStyle(fontWeight: FontWeight.bold)),
+          )
+        ],
+      ),
+    );
+  }
+
+  BoxDecoration _boxDecoration() => BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200));
 }

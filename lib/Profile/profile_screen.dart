@@ -1,188 +1,214 @@
 import 'package:flutter/material.dart';
+import '../navbar/navbar.dart'; 
+import '../orders/my_orders_page.dart';
+import '../services/api_service.dart';
 
-// ====== GANTI SESUAI STRUKTUR PROJECT KAMU ======
-import '../navbar/navbar.dart';
-import '../services/profile_service.dart';
-import '../models/profile_model.dart';
-// ================================================
-
-class ProfileScreen extends StatelessWidget {
-  final String token;
-  const ProfileScreen({super.key, required this.token});
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<ProfileResponse>(
-      future: ProfileService().fetchProfile(token),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (snapshot.hasError || snapshot.data == null) {
-          return const Scaffold(
-            body: Center(child: Text('Gagal memuat data profile')),
-          );
-        }
-
-        final profile = snapshot.data!;
-
-        return DefaultTabController(
-          length: 3,
-          child: Scaffold(
-            bottomNavigationBar: const CustomNavBar(currentIndex: 1),
-            body: Column(
-              children: [
-                ProfileHeader(user: profile.user),
-                const TabBar(
-                  tabs: [
-                    Tab(text: 'My Style'),
-                    Tab(text: 'My Gallery'),
-                    Tab(text: 'About Me'),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      MyStyleTab(posts: profile.posts),
-                      GalleryTab(posts: profile.posts),
-                      AboutMeTab(user: profile.user),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-/* =========================
-   HEADER PROFILE
-========================= */
-class ProfileHeader extends StatelessWidget {
-  final UserProfile user;
-  const ProfileHeader({super.key, required this.user});
+class _ProfileScreenState extends State<ProfileScreen> {
+  final ApiService _apiService = ApiService();
+  Map<String, dynamic>? userData;
+  List<dynamic> userPosts = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final response = await _apiService.getProfileData();
+    if (response != null && response['success'] == true) {
+      setState(() {
+        userData = response['data']['user'];
+        userPosts = response['data']['posts'];
+        isLoading = false;
+      });
+    } else {
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = user.profilePicture != null
-        ? 'http://10.0.2.2:8000/assets/images/profile/${user.profilePicture}'
-        : null;
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Color(0xFFFA6297))),
+      );
+    }
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 36,
-            backgroundImage:
-                imageUrl != null ? NetworkImage(imageUrl) : null,
-            child: imageUrl == null
-                ? const Icon(Icons.person, size: 36)
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                user.name,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFFDEEF0),
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          title: const Text('9:41', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black54),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyOrdersPage())),
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings, color: Colors.black54),
+              onPressed: () {},
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // HEADER PROFIL
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 38,
+                    backgroundColor: const Color(0xFFFA6297),
+                    backgroundImage: userData?['profile_picture'] != null
+                        ? NetworkImage("${ApiService.profileImgUrl}/${userData!['profile_picture']}")
+                        : const AssetImage('assets/profile.jpg') as ImageProvider,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(userData?['name'] ?? 'Lucy', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+                        Text("@${userData?['username'] ?? 'lucymawdie'}", style: const TextStyle(color: Colors.grey)),
+                        Text(userData?['bio'] ?? 'You have no bio yet.', style: const TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFA6297), shape: StadiumBorder()),
+                    child: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
               ),
-              Text('@${user.username}',
-                  style: const TextStyle(color: Colors.grey)),
-              const SizedBox(height: 4),
-              Text(user.bio ?? 'No bio'),
-            ],
-          )
+            ),
+            
+            const TabBar(
+              indicatorColor: Color(0xFFFA6297),
+              labelColor: Colors.black,
+              unselectedLabelColor: Colors.grey,
+              tabs: [
+                Tab(text: 'My Style'),
+                Tab(text: 'My Gallery'),
+                Tab(text: 'About Me'),
+              ],
+            ),
+            
+            Expanded(
+              child: TabBarView(
+                children: [
+                  // Tab My Style
+                  ListView.builder(
+                    itemCount: userPosts.length,
+                    itemBuilder: (context, index) {
+                      final post = userPosts[index];
+                      return PostCard(
+                        name: userData?['name'] ?? 'User',
+                        username: userData?['username'] ?? 'user',
+                        date: post['created_at'].toString().substring(0, 10),
+                        text: post['caption'] ?? '',
+                        imagePath: "${ApiService.postImgUrl}/${post['image_post']}",
+                      );
+                    },
+                  ),
+                  // Tab Gallery
+                  GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 1, mainAxisSpacing: 1),
+                    itemCount: userPosts.length,
+                    itemBuilder: (context, index) => Image.network(
+                      "${ApiService.postImgUrl}/${userPosts[index]['image_post']}",
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  // Tab About Me
+                  _buildAboutMe(),
+                ],
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: const CustomNavBar(currentIndex: 4),
+      ),
+    );
+  }
+
+  Widget _buildAboutMe() {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Phone: ${userData?['phone'] ?? '-'}"),
+          const SizedBox(height: 8),
+          Text("Birthday: ${userData?['birthday'] ?? '-'}"),
+          const SizedBox(height: 8),
+          Text("Country: ${userData?['country'] ?? '-'}"),
         ],
       ),
     );
   }
 }
 
-/* =========================
-   TAB MY STYLE
-========================= */
-class MyStyleTab extends StatelessWidget {
-  final List<PostModel> posts;
-  const MyStyleTab({super.key, required this.posts});
+class PostCard extends StatelessWidget {
+  final String name, username, date, text, imagePath;
 
-  @override
-  Widget build(BuildContext context) {
-    if (posts.isEmpty) {
-      return const Center(child: Text('Belum ada postingan'));
-    }
-
-    return ListView.builder(
-      itemCount: posts.length,
-      itemBuilder: (context, index) {
-        final post = posts[index];
-        return ListTile(
-          leading: Image.network(
-            'http://10.0.2.2:8000/assets/images/todays outfit/${post.image}',
-            width: 60,
-            fit: BoxFit.cover,
-          ),
-          title: Text(post.caption),
-          subtitle: Text(post.createdAt),
-        );
-      },
-    );
-  }
-}
-
-/* =========================
-   TAB GALLERY
-========================= */
-class GalleryTab extends StatelessWidget {
-  final List<PostModel> posts;
-  const GalleryTab({super.key, required this.posts});
-
-  @override
-  Widget build(BuildContext context) {
-    if (posts.isEmpty) {
-      return const Center(child: Text('Gallery kosong'));
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 6,
-        mainAxisSpacing: 6,
-      ),
-      itemCount: posts.length,
-      itemBuilder: (context, index) {
-        return Image.network(
-          'http://10.0.2.2:8000/assets/images/todays outfit/${posts[index].image}',
-          fit: BoxFit.cover,
-        );
-      },
-    );
-  }
-}
-
-/* =========================
-   TAB ABOUT ME
-========================= */
-class AboutMeTab extends StatelessWidget {
-  final UserProfile user;
-  const AboutMeTab({super.key, required this.user});
+  const PostCard({
+    super.key, required this.name, required this.username, 
+    required this.date, required this.text, required this.imagePath
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        user.bio ?? 'Belum ada informasi',
-        style: const TextStyle(fontSize: 16),
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CircleAvatar(radius: 18, backgroundColor: Colors.grey),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(date, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
+              ),
+              Text('@${user.username}',
+                  style: const TextStyle(color: Colors.grey)),
+              const SizedBox(height: 4),
+              Text(user.bio ?? 'No bio'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(text),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              imagePath,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 200, color: Colors.grey[200], child: const Icon(Icons.broken_image),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -4,17 +4,13 @@ import 'auth/login.dart';
 import 'auth/register_page.dart';
 import 'home/home.dart';
 import 'product/product.dart';
-import 'product/detail_product_page.dart';
 import 'favorite/favorite.dart';
 import 'landing/landing_page.dart';
 import 'cart/cart_page.dart';
-import 'checkout/checkout_page.dart';
 import 'orders/my_orders_page.dart';
 import 'payment/payment_details_page.dart';
-import './todaysOutfit/todays_outfit.dart';
+import 'todaysOutfit/todays_outfit.dart';
 import 'styleJournal/style_journal.dart';
-import 'styleJournal/detail_style_journal.dart';
-
 
 void main() {
   runApp(const MyApp());
@@ -41,13 +37,14 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(), 
         '/product': (context) => const ProductPage(),
         '/favorite': (context) => const FavoritePage(),
-        '/detail': (context) => const DetailProductPage(),
         '/cart': (context) => const CartPage(),
-        '/checkout': (context) => const CheckoutPage(),
         '/my-orders': (context) => const MyOrdersPage(),
-        '/payment-details': (context) => const PaymentDetailsPage(),
+        '/payment-details': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return PaymentDetailsPage(orderData: args);
+        },
         '/todaysoutfit': (context) => const TodaysOutfitScreen(),
-        '/style-journal': (context) => const StyleJournalScreen(),
+        'style-journal':(context) => const StyleJournalScreen()
 
       },
     );

@@ -1,34 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 import '../payment/payment_details_page.dart';
-
-// 1. MODEL DATA PESANAN (Supaya bisa difilter)
-class OrderItem {
-  String title;
-  String img;
-  String size;
-  String price;
-  int qty;
-
-  OrderItem({required this.title, required this.img, required this.size, required this.price, this.qty = 1});
-}
-
-class Order {
-  String id;
-  String date;
-  String status; // 'Pending', 'Prepared', 'Shipped', 'Completed'
-  List<OrderItem> items;
-  String paymentMethod;
-  String total;
-
-  Order({
-    required this.id,
-    required this.date,
-    required this.status,
-    required this.items,
-    required this.paymentMethod,
-    required this.total,
-  });
-}
 
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({super.key});
@@ -38,54 +10,34 @@ class MyOrdersPage extends StatefulWidget {
 }
 
 class _MyOrdersPageState extends State<MyOrdersPage> {
-  String selectedTab = 'All';
-  final List<String> tabs = ['All', 'Pending', 'Prepared', 'Shipped', 'Completed'];
+  String selectedTab = 'all';
+  final List<String> tabs = ['all', 'pending', 'prepared', 'shipped', 'completed'];
+  List<dynamic> allOrders = [];
+  bool isLoading = true;
 
-  // 2. DATA DUMMY PESANAN
-  final List<Order> allOrders = [
-    Order(
-      id: "#52",
-      date: "01 April 2025",
-      status: "Pending",
-      paymentMethod: "Bank Transfer (BCA)",
-      total: "Rp 195.000",
-      items: [
-        OrderItem(title: "Robbonie Cardigan", img: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?q=80&w=200", size: "M", price: "Rp 195.000"),
-      ],
-    ),
-    Order(
-      id: "#48",
-      date: "28 Maret 2025",
-      status: "Shipped",
-      paymentMethod: "E-Wallet (Dana)",
-      total: "Rp 295.000",
-      items: [
-        OrderItem(title: "Arket Shirt", img: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=200", size: "L", price: "Rp 120.000"),
-        OrderItem(title: "Sunny Top", img: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=200", size: "S", price: "Rp 175.000"),
-      ],
-    ),
-    Order(
-      id: "#45",
-      date: "25 Maret 2025",
-      status: "Completed",
-      paymentMethod: "COD",
-      total: "Rp 175.000",
-      items: [
-        // Pastikan nama file ini sesuai dengan yang ada di folder assets kamu (misal: assets/lily top.png atau assets/lily_top.png)
-        OrderItem(title: "Lily Top", img: "assets/lily top.png", size: "M", price: "Rp 175.000"),
-      ],
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchOrders();
+  }
+
+  Future<void> fetchOrders() async {
+    setState(() => isLoading = true);
+    final data = await ApiService().getOrders();
+    setState(() {
+      allOrders = data;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 3. LOGIKA FILTER
-    List<Order> filteredOrders = selectedTab == 'All' 
-        ? allOrders 
-        : allOrders.where((order) => order.status == selectedTab).toList();
+    List<dynamic> filteredOrders = selectedTab == 'all'
+        ? allOrders
+        : allOrders.where((order) => order['status'].toString().toLowerCase() == selectedTab).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA), // Background abu muda agar card terlihat
+      backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
         title: const Text("My Orders", style: TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold)),
         leading: const BackButton(color: Colors.black),
@@ -95,7 +47,6 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
       ),
       body: Column(
         children: [
-          // === TABS OVAL ===
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -107,26 +58,26 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               ),
             ),
           ),
-
-          // === LIST ORDER ===
           Expanded(
-            child: filteredOrders.isEmpty 
-            ? Center(child: Text("No orders in '$selectedTab'", style: const TextStyle(color: Colors.grey)))
-            : ListView.separated(
-                padding: const EdgeInsets.all(20),
-                itemCount: filteredOrders.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  return _buildOrderCard(filteredOrders[index]);
-                },
-              ),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF69B4)))
+                : RefreshIndicator(
+                    onRefresh: fetchOrders,
+                    child: filteredOrders.isEmpty
+                        ? const Center(child: Text("Belum ada pesanan"))
+                        : ListView.separated(
+                            padding: const EdgeInsets.all(20),
+                            itemCount: filteredOrders.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 16),
+                            itemBuilder: (context, index) => _buildOrderCard(filteredOrders[index]),
+                          ),
+                  ),
           ),
         ],
       ),
     );
   }
 
-  // WIDGET TAB
   Widget _buildTab(String tab) {
     bool isActive = selectedTab == tab;
     return GestureDetector(
@@ -140,132 +91,83 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
           border: Border.all(color: isActive ? const Color(0xFFFF69B4) : Colors.grey.shade300),
         ),
         child: Text(
-          tab,
-          style: TextStyle(
-            color: isActive ? Colors.white : Colors.grey[600],
-            fontWeight: FontWeight.w600,
-          ),
+          tab.toUpperCase(),
+          style: TextStyle(color: isActive ? Colors.white : Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 12),
         ),
       ),
     );
   }
 
-  // --- FUNGSI HELPER UNTUK MENAMPILKAN GAMBAR (PENTING!) ---
-  Widget _buildImage(String imgPath, {double width = 70, double height = 70}) {
-    if (imgPath.startsWith('http')) {
-      // Jika link internet
-      return Image.network(
-        imgPath, 
-        width: width, 
-        height: height, 
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300], width: width, height: height, child: const Icon(Icons.broken_image)),
-      );
-    } else {
-      // Jika aset lokal
-      return Image.asset(
-        imgPath, 
-        width: width, 
-        height: height, 
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300], width: width, height: height, child: const Icon(Icons.broken_image)),
-      );
-    }
-  }
-
-  // WIDGET CARD ORDER
-  Widget _buildOrderCard(Order order) {
-    // Ambil item pertama untuk preview
-    final firstItem = order.items[0];
-    final itemCount = order.items.length;
+  Widget _buildOrderCard(Map<String, dynamic> order) {
+    final List items = order['items'] ?? [];
+    if (items.isEmpty) return const SizedBox();
+    final firstProduct = items[0]['produk'] ?? {};
+    final itemCount = items.length;
+    String imageName = firstProduct['gambar_produk'] ?? "";
+    String assetPath = 'assets/produk-looksee/$imageName';
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Card (Tanggal & Status)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(order.date, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0F5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  order.status, 
-                  style: const TextStyle(color: Color(0xFFFF69B4), fontSize: 12, fontWeight: FontWeight.bold)
-                ),
+              Text(order['order_date'] ?? "", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                order['status'].toString().toUpperCase(),
+                style: const TextStyle(color: Color(0xFFFF69B4), fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const Divider(height: 24),
-          
-          // Content Preview
           Row(
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                // GUNAKAN FUNGSI HELPER DI SINI
-                child: _buildImage(firstItem.img, width: 70, height: 70),
+                child: Image.asset(
+                  assetPath,
+                  width: 70, height: 70, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(width: 70, height: 70, color: Colors.grey[200], child: const Icon(Icons.broken_image, color: Colors.grey)),
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(firstItem.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    Text(firstProduct['nama_produk'] ?? "Product", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     const SizedBox(height: 4),
-                    Text("${itemCount > 1 ? '+ ${itemCount - 1} other items' : firstItem.size}", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                    Text(itemCount > 1 ? "+ ${itemCount - 1} other items" : "Quantity: ${items[0]['quantity']}", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
                     const SizedBox(height: 8),
-                    Text(order.total, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                    Text("Rp ${order['grand_total']}", style: const TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-
-          // Buttons Action
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              if (order.status == 'Pending')
+              if (order['status'].toString().toLowerCase() == 'pending')
                 Padding(
                   padding: const EdgeInsets.only(right: 10),
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentDetailsPage()));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF69B4),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      minimumSize: const Size(0, 36),
-                    ),
-                    child: const Text("Pay Now", style: TextStyle(fontSize: 13)),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => PaymentDetailsPage(orderData: order))),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF69B4), shape: const StadiumBorder()),
+                    child: const Text("Pay Now", style: TextStyle(fontSize: 12, color: Colors.white)),
                   ),
                 ),
-              
               OutlinedButton(
-                onPressed: () => _showOrderDetailModal(order),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFFF69B4)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  minimumSize: const Size(0, 36),
-                ),
-                child: const Text("See Detail", style: TextStyle(color: Color(0xFFFF69B4), fontSize: 13)),
+                onPressed: () => _showOrderDetailModal(order['order_id'].toString()),
+                style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFFF69B4)), shape: const StadiumBorder()),
+                child: const Text("See Detail", style: TextStyle(color: Color(0xFFFF69B4), fontSize: 12)),
               ),
             ],
           )
@@ -274,132 +176,117 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     );
   }
 
-  // 4. MODAL DETAIL ORDER (POP UP)
-  void _showOrderDetailModal(Order order) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
+  // === MODAL DETAIL LENGKAP (API SYNC) ===
+  void _showOrderDetailModal(String orderId) async {
+    showDialog(context: context, builder: (_) => const Center(child: CircularProgressIndicator()));
+    final data = await ApiService().getOrderDetail(orderId);
+    Navigator.pop(context);
+
+    if (data != null) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+        builder: (context) => DraggableScrollableSheet(
+          initialChildSize: 0.8,
           minChildSize: 0.5,
-          maxChildSize: 0.9,
+          maxChildSize: 0.95,
           expand: false,
-          builder: (context, scrollController) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 50, height: 5,
-                      decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Header Modal
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("Order ${order.id}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: const Color(0xFFFF69B4), borderRadius: BorderRadius.circular(20)),
-                        child: Text(order.status, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text("Date: ${order.date}", style: TextStyle(color: Colors.grey[600])),
-                  
-                  const Divider(height: 40),
+          builder: (_, scrollController) => SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Modal
+                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)))),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Order #${data['order_id']}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(data['status'].toString().toUpperCase(), style: const TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const Divider(height: 30),
 
-                  // List Produk
-                  const Text("Product List", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 16),
-                  ...order.items.map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          // GUNAKAN FUNGSI HELPER JUGA DI SINI
-                          child: _buildImage(item.img, width: 60, height: 60),
+                // Section: Penerima & Alamat
+                const Text("Shipping Info", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                const SizedBox(height: 10),
+                _detailInfoRow("Recipient", data['nama_penerima'] ?? "-"),
+                _detailInfoRow("Phone", data['no_telepon'] ?? "-"),
+                _detailInfoRow("Address", "${data['alamat_lengkap']}, ${data['kota']}, ${data['provinsi']} (${data['kode_pos']})"),
+                
+                const Divider(height: 30),
+
+                // Section: Produk
+                const Text("Items Ordered", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                const SizedBox(height: 10),
+                ...(data['items'] as List).map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset('assets/produk-looksee/${item['gambar_produk']}', width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (_,__,___)=>const Icon(Icons.image)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item['nama_produk'], style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text("${item['quantity']} x Rp ${item['price_at_purchase']}", style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              Text("${item.qty} x ${item.price}", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                              Text("Size: ${item.size}", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                            ],
-                          ),
-                        )
-                      ],
-                    ),
-                  )),
-
-                  const Divider(height: 40),
-
-                  // Detail Pengiriman & Pembayaran
-                  const Text("Shipping Info", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 10),
-                  _detailRow("Recipient", "Lucy Maudy"),
-                  _detailRow("Address", "Jl. Raya Panjang Pisan..."),
-                  _detailRow("Courier", "JNE Regular"),
-                  
-                  const SizedBox(height: 20),
-                  const Text("Payment Info", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 10),
-                  _detailRow("Method", order.paymentMethod),
-                  _detailRow("Shipping Fee", "Rp 0"),
-                  const Divider(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Total Price", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text(order.total, style: const TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold, fontSize: 18)),
+                      )
                     ],
                   ),
-                  
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      ),
-                      child: const Text("Close Detail"),
-                    ),
-                  )
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+                )).toList(),
+
+                const Divider(height: 30),
+
+                // Section: Pembayaran
+                const Text("Payment Info", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                const SizedBox(height: 10),
+                _detailInfoRow("Method", data['payment_method'] ?? "-"),
+                if (data['payment_detail'] != null && data['payment_detail'].toString().isNotEmpty)
+                  _detailInfoRow("Provider", data['payment_detail']),
+                _detailInfoRow("Trans. ID", data['transaction_code'] ?? "-"),
+                
+                const Divider(height: 30),
+
+                // Section: Total
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Total Payment", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text("Rp ${data['total_price']}", style: const TextStyle(color: Color(0xFFFF69B4), fontWeight: FontWeight.bold, fontSize: 18)),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                SizedBox(width: double.infinity, child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context), 
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white, shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 14)),
+                  child: const Text("Close Detail")
+                )),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
   }
 
-  Widget _detailRow(String label, String value) {
+  Widget _detailInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600])),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+          SizedBox(width: 80, child: Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13))),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
         ],
       ),
     );

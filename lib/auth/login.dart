@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'register_page.dart'; // Pastikan file register.dart ada
+import 'register_page.dart'; 
+import '../services/api_service.dart'; // Import ApiService
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,8 +11,56 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
+  bool _isLoading = false; // Variable untuk loading
+
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  // --- LOGIKA LOGIN (BARU) ---
+  void _handleLogin() async {
+    String username = _usernameController.text;
+    String password = _passwordController.text;
+
+    // 1. Validasi Input
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Harap isi Username dan Password!")),
+      );
+      return;
+    }
+
+    // 2. Mulai Loading
+    setState(() => _isLoading = true);
+
+    // 3. Panggil API Login
+    bool isSuccess = await ApiService().login(username, password);
+
+    // 4. Stop Loading
+    setState(() => _isLoading = false);
+
+    // 5. Cek Hasil
+    if (isSuccess) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Login Berhasil!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Masuk ke Home
+        Navigator.pushReplacementNamed(context, '/home'); 
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Login Gagal! Cek username atau password."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +76,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         child: SafeArea(
-          // === TAMBAHAN PENTING: ScrollView AGAR TIDAK ERROR OVERFLOW ===
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Column(
@@ -56,6 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 40),
 
                 // FORM INPUT
+                // Diubah jadi Username & Icon Person
                 _buildInput(Icons.person, "Username", controller: _usernameController),
                 const SizedBox(height: 20),
                 _buildInput(Icons.lock_outline, "Password", isPassword: true, controller: _passwordController),
@@ -76,19 +125,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Harap isi semua kolom!")));
-                      } else {
-                        Navigator.pushReplacementNamed(context, '/home');
-                      }
-                    },
+                    // Jika loading, tombol dimatikan
+                    onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF69B4),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
-                    child: const Text("LOGIN", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    // Jika loading, tampilkan putaran. Jika tidak, tampilkan teks LOGIN
+                    child: _isLoading
+                      ? const SizedBox(
+                          width: 20, 
+                          height: 20, 
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                        )
+                      : const Text("LOGIN", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 
@@ -101,7 +152,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text("Don't have an account? ", style: TextStyle(fontSize: 14, color: Colors.black54)),
                     GestureDetector(
                       onTap: () {
-                        // Pastikan navigasi ke register benar
                         Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterPage()));
                       },
                       child: const Text("Register", style: TextStyle(fontSize: 14, color: Color(0xFFFF69B4), fontWeight: FontWeight.bold)),
@@ -129,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.black87),
           hintText: hint,
-          hintStyle: const TextStyle(color: Colors.black54, fontSize: 14), // Warna hint abu-abu agar terlihat
+          hintStyle: const TextStyle(color: Colors.black54, fontSize: 14), 
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           suffixIcon: isPassword 

@@ -1,38 +1,24 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import '../services/api_service.dart';
+import '../todaysOutfit/todays_outfit.dart' hide ApiService;
 import 'gallery.dart';
-import '../todaysOutfit/todays_outfit.dart';
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Post My Style UI Final',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
-        useMaterial3: true,
-      ),
-      home: const PostMyStyleScreen(),
-    );
-  }
-}
 
 class PostMyStyleScreen extends StatefulWidget {
-  const PostMyStyleScreen({super.key});
+  final String? imagePath; 
+  const PostMyStyleScreen({super.key, this.imagePath});
 
   @override
   State<PostMyStyleScreen> createState() => _PostMyStyleScreenState();
 }
 
 class _PostMyStyleScreenState extends State<PostMyStyleScreen> {
-  final String assetImagePath = 'assets/to4.jpg';
+  final ApiService _apiService = ApiService();
+  final TextEditingController _captionController = TextEditingController();
+  final TextEditingController _hashtagController = TextEditingController();
   
-  String? _selectedMood = 'Very Happy'; 
+  String? _selectedMood = 'Happy'; 
+  bool _isUploading = false;
 
   final List<String> moods = const [
     'Very Happy',
@@ -48,156 +34,129 @@ class _PostMyStyleScreenState extends State<PostMyStyleScreen> {
     });
   }
 
-  void _handlePost() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const TodaysOutfitScreen(),
-      ),
+  void _handlePost() async {
+    if (widget.imagePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select an image first")),
+      );
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    bool success = await _apiService.createPost(
+      _captionController.text,
+      widget.imagePath!,
+      _selectedMood!,
+      _hashtagController.text,
     );
-    
-    debugPrint('Mood yang diposting: $_selectedMood');
+
+    setState(() => _isUploading = false);
+
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const TodaysOutfitScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to post style")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'Post My Style',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ImageGridScreen(), 
-              ),
-            );
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
-                child: Image.asset(
-                  assetImagePath,
-                  height: 200,
-                  width: 150,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 200,
-                      width: 150,
-                      color: Colors.grey.shade300,
-                      child: const Center(child: Text('Error: Asset not found')),
-                    );
-                  },
+      body: _isUploading 
+        ? const Center(child: CircularProgressIndicator(color: Colors.pink))
+        : SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: widget.imagePath != null
+                        ? Image.file(
+                            File(widget.imagePath!),
+                            height: 250,
+                            width: 200,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            height: 250,
+                            width: 200,
+                            color: Colors.grey.shade300,
+                            child: const Icon(Icons.image, size: 50),
+                          ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16.0),
-
-            const TextField(
-              decoration: InputDecoration(
-                hintText: 'Add a caption...',
-                hintStyle: TextStyle(color: Colors.grey),
-                border: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 0.5),
+                const SizedBox(height: 16.0),
+                TextField(
+                  controller: _captionController,
+                  decoration: const InputDecoration(
+                    hintText: 'Add a caption...',
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                  ),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 0.5),
+                const SizedBox(height: 16.0),
+                TextField(
+                  controller: _hashtagController,
+                  decoration: const InputDecoration(
+                    hintText: 'Add hashtags...',
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                  ),
                 ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                ),
-                contentPadding: EdgeInsets.symmetric(vertical: 10.0),
-              ),
-              style: TextStyle(fontSize: 16.0),
-            ),
-            const SizedBox(height: 24.0),
-
-            const Row(
-              children: <Widget>[
-                Icon(Icons.sentiment_satisfied_alt, color: Colors.black54),
-                SizedBox(width: 8.0),
-                Text(
-                  'Add Mood',
-                  style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12.0),
-            
-            MoodChipsRow(
-              moods: moods,
-              selectedMood: _selectedMood,
-              onMoodSelected: _selectMood,
-            ),
-
-            const SizedBox(height: 32.0),
-
-            const AddItemsHeader(),
-            const SizedBox(height: 12.0),
-
-            const ProductItemInput(),
-            const ProductItemInput(),
-
-            const SizedBox(height: 40.0),
-
-            Center(
-              child: Container(
-                width: double.infinity,
-                height: 50,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.pink.shade300.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 7,
-                      offset: const Offset(0, 3),
-                    ),
+                const SizedBox(height: 24.0),
+                const Row(
+                  children: [
+                    Icon(Icons.sentiment_satisfied_alt, color: Colors.black54),
+                    SizedBox(width: 8.0),
+                    Text('Add Mood', style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.w600)),
                   ],
                 ),
-                child: ElevatedButton(
-                  onPressed: _handlePost,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pink.shade300,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
+                const SizedBox(height: 12.0),
+                MoodChipsRow(
+                  moods: moods,
+                  selectedMood: _selectedMood,
+                  onMoodSelected: _selectMood,
+                ),
+                const SizedBox(height: 40.0),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _handlePost,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.pink.shade300,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                     ),
-                    elevation: 0,
-                    padding: EdgeInsets.zero,
-                  ),
-                  child: const Text(
-                    'Post',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    child: const Text(
+                      'Post',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 20.0),
+              ],
             ),
-            const SizedBox(height: 20.0),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }
@@ -218,134 +177,16 @@ class MoodChipsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Wrap(
       spacing: 8.0,
-      runSpacing: 4.0,
       children: moods.map((moodLabel) {
         final bool isSelected = moodLabel == selectedMood;
-        return InkWell(
-          onTap: () => onMoodSelected(moodLabel),
-          child: Chip(
-            label: Text(
-              moodLabel,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
-                fontWeight: FontWeight.w500,
-                fontSize: 14.0,
-              ),
-            ),
-            backgroundColor: isSelected ? Colors.pink.shade400 : Colors.grey.shade300,
-            padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-          ),
+        return ChoiceChip(
+          label: Text(moodLabel),
+          selected: isSelected,
+          onSelected: (_) => onMoodSelected(moodLabel),
+          selectedColor: Colors.pink.shade400,
+          labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
         );
       }).toList(),
-    );
-  }
-}
-
-
-class AddItemsHeader extends StatelessWidget {
-  const AddItemsHeader({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        const Row(
-          children: <Widget>[
-            Icon(Icons.shopping_bag_outlined, color: Colors.black54),
-            SizedBox(width: 8.0),
-            Text(
-              'Add Items',
-              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: Colors.pink.shade100,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.add, color: Colors.pink),
-            iconSize: 20,
-            onPressed: () {
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class ProductItemInput extends StatelessWidget {
-  const ProductItemInput({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    const OutlineInputBorder inputBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(5)),
-      borderSide: BorderSide(color: Colors.grey),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const Expanded(
-            child: Column(
-              children: <Widget>[
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Product name',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    border: inputBorder,
-                    enabledBorder: inputBorder,
-                    focusedBorder: inputBorder,
-                    isDense: true,
-                  ),
-                ),
-                SizedBox(height: 8.0),
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Put the product link here',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    border: inputBorder,
-                    enabledBorder: inputBorder,
-                    focusedBorder: inputBorder,
-                    isDense: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8.0),
-          Padding(
-            padding: const EdgeInsets.only(top: 10.0),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.pink.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.remove, color: Colors.red),
-                iconSize: 18,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () {
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
