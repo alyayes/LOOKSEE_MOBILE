@@ -1,10 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
-// Import Navbar
 import '../navbar/navbar.dart';
-// Import halaman detail
 import 'detail_style_journal.dart';
 
 class StyleJournalScreen extends StatefulWidget {
@@ -24,27 +21,24 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
     fetchStyleJournals();
   }
 
-  // ===============================
-  // FETCH DATA DARI LARAVEL API
-  // ===============================
   Future<void> fetchStyleJournals() async {
     final url = Uri.parse('http://10.128.83.120:8001/api/stylejournals');
 
     try {
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
 
         setState(() {
-          journalData = decoded['data']; // karena paginate
+          journalData = decoded['data'] ?? [];
           isLoading = false;
         });
       } else {
-        debugPrint('Gagal load data');
+        setState(() => isLoading = false);
       }
     } catch (e) {
-      debugPrint(e.toString());
+      setState(() => isLoading = false);
     }
   }
 
@@ -52,11 +46,8 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      // NAVBAR
       extendBody: true,
       bottomNavigationBar: const CustomNavBar(currentIndex: 3),
-
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -65,8 +56,6 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 10),
-
-              // ================= HEADER =================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -92,10 +81,7 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
                   )
                 ],
               ),
-
               const SizedBox(height: 20),
-
-              // ================= SEARCH =================
               Container(
                 height: 50,
                 decoration: BoxDecoration(
@@ -117,10 +103,7 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 30),
-
-              // ================= SUBTITLE =================
               const Text(
                 "Fashion Insights",
                 style: TextStyle(
@@ -134,14 +117,11 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
                 "Explore tips, tricks, and trends!",
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-
               const SizedBox(height: 25),
-
-              // ================= LIST CARD =================
               if (isLoading)
                 const Padding(
                   padding: EdgeInsets.only(top: 40),
-                  child: CircularProgressIndicator(),
+                  child: CircularProgressIndicator(color: Color(0xFFFF69B4)),
                 )
               else
                 ListView.builder(
@@ -150,19 +130,16 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
                   itemCount: journalData.length,
                   itemBuilder: (context, index) {
                     final item = journalData[index];
-
                     return HoverFashionCard(
-                      
                       imagePath: item['image'] != null
                           ? 'http://10.128.83.120:8001/storage/${item['image']}'
                           : '',
-                      title: item['title'],
-                      content: item['content'],
+                      title: item['title'] ?? 'No Title',
+                      content: item['content'] ?? '',
                       date: item['formatted_date'] ?? '',
                     );
                   },
                 ),
-
               const SizedBox(height: 120),
             ],
           ),
@@ -172,9 +149,6 @@ class _StyleJournalScreenState extends State<StyleJournalScreen> {
   }
 }
 
-// =======================================================
-// CARD TETAP SAMA (DESIGN ASLI TIDAK DIUBAH)
-// =======================================================
 class HoverFashionCard extends StatefulWidget {
   final String imagePath;
   final String title;
@@ -239,7 +213,7 @@ class _HoverFashionCardState extends State<HoverFashionCard> {
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: Colors.grey[200],
-                    child: const Icon(Icons.image, size: 40),
+                    child: const Icon(Icons.image, size: 40, color: Colors.grey),
                   ),
                 ),
                 AnimatedOpacity(
@@ -251,13 +225,16 @@ class _HoverFashionCardState extends State<HoverFashionCard> {
                   opacity: _isHovering ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 300),
                   child: Center(
-                    child: Text(
-                      widget.title,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        widget.title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

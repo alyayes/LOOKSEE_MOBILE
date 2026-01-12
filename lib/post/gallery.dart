@@ -1,128 +1,92 @@
 import 'package:flutter/material.dart';
 import 'post.dart';
-import 'camera.dart';
+import '../services/api_service.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Image Grid UI',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          backgroundColor: Colors.white,
-        ),
-        scaffoldBackgroundColor: Colors.white,
-      ),
-      home: const ImageGridScreen(),
-    );
-  }
-}
-
-class ImageGridScreen extends StatelessWidget {
+class ImageGridScreen extends StatefulWidget {
   const ImageGridScreen({super.key});
 
-  final List<String> imagePaths = const [
-    'assets/to1.jpg',
-    'assets/to32.jpg',
-    'assets/to3.jpeg',
-    'assets/to4.jpg',
-    'assets/to33.jpg',
-    'assets/to12.jpg',
-    'assets/to29.jpg',
-    'assets/to30.jpg',
-    'assets/to36.jpg',
-    'assets/to39.jpg',
-    'assets/to37.jpg',
-    'assets/to27.jpg',
-    'assets/to38.jpg',
-    'assets/to34.jpg',
-    'assets/to35.jpg',
-    'assets/to28.jpg',
-    'assets/to40.jpg',
-    'assets/to18.jpeg',
-    'assets/to33.jpg',
-    'assets/to20.jpeg',
-    'assets/to44.jpg',
-    'assets/to22.jpeg',
-    'assets/to41.jpg',
-    'assets/to24.jpg',
-    'assets/to25.jpg',
-    'assets/to26.jpg',
-    'assets/to43.jpg',
-    'assets/to28.jpg',
-    'assets/to29.jpg',
-    'assets/to30.jpg',
-  ];
+  @override
+  State<ImageGridScreen> createState() => _ImageGridScreenState();
+}
 
-  final int totalItems = 30;
+class _ImageGridScreenState extends State<ImageGridScreen> {
+  final ApiService _apiService = ApiService();
+  List<dynamic> galleryItems = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGallery();
+  }
+
+  Future<void> _fetchGallery() async {
+    final response = await _apiService.getProfileData();
+    if (response != null && response['success'] == true) {
+      setState(() {
+        galleryItems = response['data']['posts'] ?? [];
+        isLoading = false;
+      });
+    } else {
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(''),
-        toolbarHeight: 50,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 0.0),
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 2.0,
-              mainAxisSpacing: 2.0,
-              childAspectRatio: 0.75,
-            ),
-            itemCount: totalItems,
-            itemBuilder: (context, index) {
-              final String currentImagePath = imagePaths[index % imagePaths.length];
-
-              return _buildGridItem(context, currentImagePath);
-            },
-          ),
+        title: const Text(
+          'My Gallery',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
-    );
-  }
-
-  Widget _buildGridItem(BuildContext context, String path) {
-    final bool isTargetImage = path == 'assets/to4.jpg';
-
-    return InkWell(
-      onTap: () {
-        if (isTargetImage) {
-          // Asumsi PostScreen adalah PostMyStyleScreen dari konteks sebelumnya
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const PostMyStyleScreen(),
-            ),
-          );
-        } else {
-          debugPrint('Gambar diklik: $path');
-        }
-      },
-      child: Image.asset(
-        path,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(child: Icon(Icons.error, color: Colors.red, size: 40));
-        },
-      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.pink))
+          : galleryItems.isEmpty
+              ? const Center(child: Text("No images found"))
+              : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 0.0),
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 2.0,
+                      mainAxisSpacing: 2.0,
+                      childAspectRatio: 0.75,
+                    ),
+                    itemCount: galleryItems.length,
+                    itemBuilder: (context, index) {
+                      final item = galleryItems[index];
+                      final String imageUrl = "${ApiService.postImgUrl}/${item['image_post']}";
+                      
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PostMyStyleScreen(imagePath: imageUrl),
+                            ),
+                          );
+                        },
+                        child: Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.broken_image, color: Colors.grey),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
     );
   }
 }

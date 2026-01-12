@@ -6,6 +6,9 @@ class ApiService {
   // IP Laptop Kamu (Sesuai kesepakatan)
   static const String baseUrl = "http://10.128.83.120:8001/api";
 
+  static const String profileImgUrl = "http://10.128.83.120:8001/assets/images/profile";
+  static const String postImgUrl = "http://10.128.83.120:8001/assets/images/todays outfit";
+
   // Variabel untuk menyimpan Token Login sementara
   static String? _token;
 
@@ -96,6 +99,24 @@ class ApiService {
     return null;
   }
 
+  // --- PROFILE ---
+  Future<Map<String, dynamic>?> getProfileData() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/profile'),
+        headers: _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print("Error getProfileData: $e");
+      return null;
+    }
+  }
+
   // ===============================================================
   // 2. PROFILE MANAGEMENT
   // ===============================================================
@@ -177,17 +198,26 @@ Future<List<dynamic>> getTodaysOutfit() async {
   return [];
 }
 
-// --- CRUD POSTINGAN PROFILE ---
-Future<bool> createPost(String caption, String imageUrl) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/profile/post'),
-    headers: _getHeaders(),
-    body: jsonEncode({
-      'caption': caption,
-      'image': imageUrl,
-    }),
-  );
-  return response.statusCode == 201 || response.statusCode == 200;
+// --- POST MY STYLE ---
+Future<bool> createPost(String caption, String imagePath, String mood, String hashtags) async {
+  try {
+    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/profile/post'));
+
+    request.headers.addAll(_getHeaders());
+
+    request.fields['caption'] = caption;
+    request.fields['mood'] = mood;
+    request.fields['hashtags'] = hashtags;
+
+    request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    return response.statusCode == 201 || response.statusCode == 200;
+  } catch (e) {
+    return false;
+  }
 }
 
 Future<bool> deletePost(String id) async {

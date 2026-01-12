@@ -3,27 +3,29 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../navbar/navbar.dart';
 
-// ================= API SERVICE =================
 class ApiService {
   static const String baseUrl = "http://10.128.83.120:8001/api";
+  static const String storageUrl = "http://10.128.83.120:8001/storage/todaysoutfit";
 
   Future<List<dynamic>> fetchPosts(String endpoint) async {
-    final cleanEndpoint =
-        endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+    try {
+      final cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+      final url = Uri.parse('$baseUrl/$cleanEndpoint');
+      
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
 
-    final url = Uri.parse('$baseUrl/$cleanEndpoint');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> decoded = json.decode(response.body);
-      return decoded['data'] ?? [];
-    } else {
-      throw Exception("Gagal memuat data");
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> decoded = json.decode(response.body);
+        return decoded['data'] ?? [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      throw Exception("Gagal terhubung ke server");
     }
   }
 }
 
-// ================= SCREEN =================
 class TodaysOutfitScreen extends StatefulWidget {
   const TodaysOutfitScreen({super.key});
 
@@ -48,7 +50,6 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
     super.dispose();
   }
 
-  // ================= MOOD TAG =================
   Widget _buildMoodTag(String mood) {
     Color color = const Color(0xFFF7A2B4);
     if (mood.toLowerCase().contains('sad')) color = Colors.blue;
@@ -63,84 +64,78 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
       child: Text(
         mood,
         style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
+          fontSize: 10, 
+          fontWeight: FontWeight.bold, 
           color: Colors.white,
         ),
       ),
     );
   }
 
-  // ================= CARD =================
   Widget _buildOutfitItem(Map<String, dynamic> item) {
+    final userData = item['user'] as Map<String, dynamic>?;
+    final userName = userData?['name'] ?? 'Anonymous';
+    final String imageFileName = item['image_post'] ?? '';
+
     return Card(
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // IMAGE (ASSET)
             AspectRatio(
               aspectRatio: 3 / 4,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: Image.asset(
-                  'assets/todaysoutfit/${item['image_post']}',
+                child: Image.network(
+                  "${ApiService.storageUrl}/$imageFileName",
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (context, error, stackTrace) => Container(
                     color: Colors.grey[200],
-                    child: const Icon(Icons.broken_image),
+                    child: const Icon(Icons.broken_image, color: Colors.grey),
                   ),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null 
+                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! 
+                          : null,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
-
             const SizedBox(height: 8),
-
             Text(
               item['caption'] ?? 'No Title',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
-
             const SizedBox(height: 6),
-
             Row(
               children: [
                 CircleAvatar(
                   radius: 9,
                   backgroundColor: Colors.pink[100],
                   child: Text(
-                    item['user'] != null
-                        ? item['user']['name'][0]
-                        : '?',
+                    userName.isNotEmpty ? userName[0].toUpperCase() : '?', 
                     style: const TextStyle(fontSize: 10),
                   ),
                 ),
                 const SizedBox(width: 6),
-
                 Expanded(
                   child: Text(
-                    item['user'] != null
-                        ? item['user']['name']
-                        : 'Anonymous',
+                    userName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ),
-
                 _buildMoodTag(item['mood'] ?? 'Happy'),
               ],
             ),
@@ -150,25 +145,21 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
     );
   }
 
-  // ================= PAGE =================
   Widget _buildPage(String endpoint) {
     return FutureBuilder<List<dynamic>>(
       future: _apiService.fetchPosts(endpoint),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: Color(0xFFF7A2B4)));
         }
-
         if (snapshot.hasError) {
-          return const Center(child: Text("Gagal memuat data"));
+          return Center(child: Text("${snapshot.error}"));
         }
-
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("Data kosong"));
+          return const Center(child: Text("Belum ada postingan"));
         }
 
         final items = snapshot.data!;
-
         return GridView.builder(
           padding: const EdgeInsets.all(16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -178,20 +169,17 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
             childAspectRatio: 0.62,
           ),
           itemCount: items.length,
-          itemBuilder: (context, index) {
-            return _buildOutfitItem(items[index]);
-          },
+          itemBuilder: (context, index) => _buildOutfitItem(items[index]),
         );
       },
     );
   }
 
-  // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Todays Outfit'),
+        title: const Text('Todays Outfit', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: Column(
@@ -199,8 +187,9 @@ class _TodaysOutfitScreenState extends State<TodaysOutfitScreen>
           TabBar(
             controller: _tabController,
             labelColor: const Color(0xFFF7A2B4),
-            unselectedLabelColor: Colors.black,
+            unselectedLabelColor: Colors.black54,
             indicatorColor: const Color(0xFFF7A2B4),
+            indicatorSize: TabBarIndicatorSize.tab,
             tabs: const [
               Tab(text: 'Explore'),
               Tab(text: 'Trends'),

@@ -18,7 +18,6 @@ class DetailStyleJournal extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
@@ -31,12 +30,10 @@ class DetailStyleJournal extends StatelessWidget {
           ),
         ),
       ),
-
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ================= IMAGE =================
             AspectRatio(
               aspectRatio: 16 / 9,
               child: Image.network(
@@ -49,16 +46,12 @@ class DetailStyleJournal extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // ================= CONTENT =================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // TITLE
                   Text(
                     title,
                     style: const TextStyle(
@@ -67,10 +60,7 @@ class DetailStyleJournal extends StatelessWidget {
                       height: 1.3,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
-                  // DATE
                   Text(
                     date,
                     style: const TextStyle(
@@ -78,10 +68,7 @@ class DetailStyleJournal extends StatelessWidget {
                       fontSize: 14,
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // CONTENT
                   Text(
                     content,
                     style: const TextStyle(
@@ -90,7 +77,6 @@ class DetailStyleJournal extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
-
                   const SizedBox(height: 40),
                 ],
               ),
